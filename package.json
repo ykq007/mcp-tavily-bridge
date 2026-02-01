@@ -1,0 +1,22 @@
+{
+  "name": "mcp-tavily-bridge",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "prisma:generate": "npx prisma generate --schema packages/db/prisma/schema.prisma",
+    "build": "npm run prisma:generate && npm --workspaces run build && node scripts/syncAdminUiPublic.mjs",
+    "dev": "npm --workspaces run dev --if-present",
+    "dev:bridge-server": "npm run build && node packages/bridge-server/dist/index.js",
+    "dev:bridge-stdio": "npm run build && node packages/bridge-stdio/dist/index.js",
+    "dev:admin-ui": "npm --workspace @mcp-tavily-bridge/admin-ui run dev",
+    "typecheck": "npm --workspaces run typecheck --if-present",
+    "test": "npm run build && npm --workspaces run test --if-present"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

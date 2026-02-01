@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: tavily_bridge
+    ports:
+      - "5432:5432"
+    volumes:
+      - tavily_bridge_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tavily_bridge"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+
+  bridge-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8787"
+    ports:
+      - "8787:8787"
+    command: ["sh", "docker/entrypoint.sh"]
+
+volumes:
+  tavily_bridge_pg: {}

@@ -1,0 +1,254 @@
+export type TavilyKeyStatus = 'active' | 'disabled' | 'cooldown' | 'invalid';
+
+export type TavilyKeyDto = {
+  id: string;
+  label: string;
+  maskedKey: string | null;
+  status: TavilyKeyStatus;
+  cooldownUntil: string | null;
+  lastUsedAt: string | null;
+  createdAt: string;
+  remainingCredits: number | null;
+  totalCredits: number | null;
+  lastCheckedAt: string | null;
+};
+
+export type ClientTokenDto = {
+  id: string;
+  tokenPrefix: string;
+  description: string | null;
+  revokedAt: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+};
+
+export type TavilyToolUsageDto = {
+  id: string;
+  timestamp: string;
+  toolName: string;
+  outcome: string;
+  latencyMs: number | null;
+  clientTokenId: string;
+  clientTokenPrefix: string | null;
+  upstreamKeyId: string | null;
+  queryHash: string | null;
+  queryPreview: string | null;
+  argsJson: unknown;
+  errorMessage: string | null;
+};
+
+export type PaginationDto = {
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  limit: number;
+};
+
+export type TavilyToolUsageResponseDto = {
+  logs: TavilyToolUsageDto[];
+  pagination: PaginationDto;
+};
+
+export type TavilyToolUsageFilters = {
+  page?: number;
+  limit?: number;
+  toolName?: string;
+  outcome?: string;
+  clientTokenPrefix?: string;
+  queryHash?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  order?: 'asc' | 'desc';
+};
+
+export type TavilyToolUsageSummaryDto = {
+  total: number;
+  byTool: { toolName: string; count: number }[];
+  topQueries: { queryHash: string | null; queryPreview: string | null; count: number }[];
+};
+
+export type AdminApiConfig = {
+  baseUrl: string;
+  adminToken: string;
+};
+
+export class AdminApiError extends Error {
+  readonly status: number;
+
+  constructor(message: string, opts: { status: number }) {
+    super(message);
+    this.name = 'AdminApiError';
+    this.status = opts.status;
+  }
+}
+
+export type AdminApi = {
+  listKeys: () => Promise<TavilyKeyDto[]>;
+  createKey: (input: { label: string; apiKey: string }) => Promise<{ id: string }>;
+  revealKey: (id: string) => Promise<{ apiKey: string }>;
+  updateKeyStatus: (id: string, status: TavilyKeyStatus) => Promise<{ ok: true }>;
+  deleteKey: (id: string) => Promise<{ ok: true }>;
+  refreshKeyCredits: (id: string) => Promise<{ remainingCredits: number; totalCredits: number }>;
+  syncAllKeyCredits: () => Promise<{ ok: true; total: number; success: number; failed: number }>;
+
+  listTokens: () => Promise<ClientTokenDto[]>;
+  createToken: (input: { description?: string; expiresInSeconds?: number }) => Promise<{ id: string; token: string }>;
+  revokeToken: (id: string) => Promise<{ ok: true }>;
+  deleteToken: (id: string) => Promise<{ ok: true }>;
+
+  listUsage: (filters?: TavilyToolUsageFilters) => Promise<TavilyToolUsageResponseDto>;
+  getUsageSummary: (filters?: { dateFrom?: string; dateTo?: string }) => Promise<TavilyToolUsageSummaryDto>;
+};
+
+export function createAdminApi(
+  config: AdminApiConfig,
+  opts: {
+    fetchImpl?: typeof fetch;
+    onAuthFailure?: () => void;
+  } = {}
+): AdminApi {
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  const baseUrl = normalizeBaseUrl(config.baseUrl);
+
+  function isProbablyHtmlResponse(res: Response, text: string): boolean {
+    const contentType = (res.headers.get('content-type') ?? '').toLowerCase();
+    if (contentType.includes('text/html')) return true;
+    const trimmed = text.trimStart().toLowerCase();
+    return trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html');
+  }
+
+  async function parseOrThrow(res: Response): Promise<any> {
+    const text = await res.text();
+    if (!res.ok && isProbablyHtmlResponse(res, text)) {
+      throw new AdminApiError(
+        `Server returned an HTML error page (HTTP ${res.status}). This usually means the backend threw an exception or the request was routed to an error page. Check the server logs and verify env vars (DATABASE_URL, ADMIN_API_TOKEN, KEY_ENCRYPTION_SECRET).`,
+        { status: res.status }
+      );
+    }
+    const body = safeJson(text);
+    if (res.ok) return body;
+
+    if (res.status === 401) {
+      try {
+        opts.onAuthFailure?.();
+      } catch {
+        // best-effort; auth failure should still surface
+      }
+      throw new AdminApiError('Unauthorized (401): token must match server ADMIN_API_TOKEN', { status: 401 });
+    }
+
+    if (res.status === 404) {
+      throw new AdminApiError('Not found (404): check Admin API base URL and that /admin routes exist', { status: 404 });
+    }
+
+    const message =
+      typeof body?.error === 'string'
+        ? body.error
+        : typeof body?.message === 'string'
+          ? body.message
+          : res.statusText || `HTTP ${res.status}`;
+
+    throw new AdminApiError(message, { status: res.status });
+  }
+
+  async function requestJson<T>(path: string, init: RequestInit): Promise<T> {
+    let res: Response;
+    try {
+      res = await fetchImpl(buildAdminUrl(baseUrl, path), {
+        ...init,
+        headers: {
+          ...(init.headers ?? {}),
+          authorization: `Bearer ${config.adminToken}`,
+          'content-type': 'application/json'
+        }
+      });
+    } catch (err: unknown) {
+      const reason = typeof (err as any)?.message === 'string' ? ` (${(err as any).message})` : '';
+      throw new AdminApiError(
+        `Network error: could not reach Admin API. In local dev, enable the Vite /admin proxy or set Settings → Admin API base URL to http://127.0.0.1:8787.${reason}`,
+        { status: 0 }
+      );
+    }
+    return parseOrThrow(res);
+  }
+
+  async function getJson<T>(path: string): Promise<T> {
+    let res: Response;
+    try {
+      res = await fetchImpl(buildAdminUrl(baseUrl, path), {
+        method: 'GET',
+        headers: { authorization: `Bearer ${config.adminToken}` }
+      });
+    } catch (err: unknown) {
+      const reason = typeof (err as any)?.message === 'string' ? ` (${(err as any).message})` : '';
+      throw new AdminApiError(
+        `Network error: could not reach Admin API. In local dev, enable the Vite /admin proxy or set Settings → Admin API base URL to http://127.0.0.1:8787.${reason}`,
+        { status: 0 }
+      );
+    }
+    return parseOrThrow(res);
+  }
+
+  return {
+    listKeys: () => getJson('/admin/keys'),
+    createKey: (input) => requestJson('/admin/keys', { method: 'POST', body: JSON.stringify(input) }),
+    revealKey: (id) => getJson(`/admin/keys/${encodeURIComponent(id)}/reveal`),
+    updateKeyStatus: (id, status) =>
+      requestJson(`/admin/keys/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+    deleteKey: (id) => requestJson(`/admin/keys/${encodeURIComponent(id)}`, { method: 'DELETE', body: '{}' }),
+    refreshKeyCredits: (id) => requestJson(`/admin/keys/${encodeURIComponent(id)}/refresh-credits`, { method: 'POST', body: '{}' }),
+    syncAllKeyCredits: () => requestJson('/admin/keys/sync-credits', { method: 'POST', body: '{}' }),
+
+    listTokens: () => getJson('/admin/tokens'),
+    createToken: (input) => requestJson('/admin/tokens', { method: 'POST', body: JSON.stringify(input) }),
+    revokeToken: (id) => requestJson(`/admin/tokens/${encodeURIComponent(id)}/revoke`, { method: 'POST', body: '{}' }),
+    deleteToken: (id) => requestJson(`/admin/tokens/${encodeURIComponent(id)}`, { method: 'DELETE', body: '{}' }),
+
+    listUsage: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.page) params.set('page', filters.page.toString());
+      if (filters.limit) params.set('limit', filters.limit.toString());
+      if (filters.toolName) params.set('toolName', filters.toolName);
+      if (filters.outcome) params.set('outcome', filters.outcome);
+      if (filters.clientTokenPrefix) params.set('clientTokenPrefix', filters.clientTokenPrefix);
+      if (filters.queryHash) params.set('queryHash', filters.queryHash);
+      if (filters.dateFrom) params.set('dateFrom', filters.dateFrom);
+      if (filters.dateTo) params.set('dateTo', filters.dateTo);
+      if (filters.order) params.set('order', filters.order);
+
+      const queryString = params.toString();
+      const path = queryString ? `/admin/usage?${queryString}` : '/admin/usage';
+      return getJson(path);
+    },
+
+    getUsageSummary: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.dateFrom) params.set('dateFrom', filters.dateFrom);
+      if (filters.dateTo) params.set('dateTo', filters.dateTo);
+      const queryString = params.toString();
+      const path = queryString ? `/admin/usage/summary?${queryString}` : '/admin/usage/summary';
+      return getJson(path);
+    }
+  };
+}
+
+export function normalizeBaseUrl(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return '';
+  return trimmed.replace(/\/+$/, '');
+}
+
+export function buildAdminUrl(baseUrl: string, path: string): string {
+  if (!path.startsWith('/')) {
+    throw new Error(`path must start with '/': ${path}`);
+  }
+  return baseUrl ? `${baseUrl}${path}` : path;
+}
+
+function safeJson(text: string): any {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+}

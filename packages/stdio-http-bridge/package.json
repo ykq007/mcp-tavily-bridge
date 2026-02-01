@@ -1,0 +1,24 @@
+{
+  "name": "@mcp-tavily-bridge/stdio-http-bridge",
+  "version": "0.0.0",
+  "private": false,
+  "type": "module",
+  "bin": "./dist/index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "tsx": "^4.19.2"
+  },
+  "devDependencies": {
+    "express": "^4.21.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

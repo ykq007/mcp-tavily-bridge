@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/db" },
+    { "path": "packages/bridge-server" },
+    { "path": "packages/bridge-stdio" },
+    { "path": "packages/stdio-http-bridge" }
+  ]
+}

@@ -1,0 +1,31 @@
+.ace-tool/
+.tmp/
+.workflow/
+node_modules/
+dist/
+coverage/
+public/admin-ui/
+packages/bridge-worker/
+.env
+.env.*
+!.env.example
+.dev.vars
+*.log
+.DS_Store
+*.tsbuildinfo
+
+# Local AI/agent tooling
+.codex/
+.gemini/
+.claude/
+**/__pycache__/
+
+# Build artifacts accidentally emitted into test folders
+packages/**/test/**/*.d.ts
+packages/**/test/**/*.d.ts.map
+packages/**/test/**/*.js
+packages/**/test/**/*.js.map
+
+# Prisma
+packages/db/prisma/dev.db
+packages/db/prisma/dev.db-journal

@@ -1,0 +1,17 @@
+node_modules
+**/node_modules
+.pnpm
+**/.pnpm
+.vite
+**/.vite
+.vite-temp
+**/.vite-temp
+.git
+.workflow
+.ace-tool
+.tmp
+dist
+coverage
+*.log
+.DS_Store
+.env
