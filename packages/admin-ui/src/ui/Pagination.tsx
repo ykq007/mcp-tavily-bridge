@@ -1,4 +1,5 @@
 import React from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { IconChevronLeft, IconChevronRight } from './icons';
 
 export function Pagination({
@@ -12,6 +13,7 @@ export function Pagination({
   pageSize: number;
   onChange: (page: number) => void;
 }) {
+  const { t } = useTranslation('common');
   const totalPages = Math.ceil(total / pageSize);
   if (totalPages <= 1) return null;
 
@@ -21,25 +23,30 @@ export function Pagination({
   return (
     <div className="pagination">
       <div className="help">
-        Showing <strong>{start}</strong> to <strong>{end}</strong> of <strong>{total}</strong> results
+        <Trans
+          i18nKey="pagination.showing"
+          ns="common"
+          values={{ start, end, total }}
+          components={{ strong: <strong /> }}
+        />
       </div>
       <div className="paginationButtons">
         <button
           className="btn"
           disabled={page === 1}
           onClick={() => onChange(page - 1)}
-          aria-label="Previous page"
+          aria-label={t('pagination.prev')}
         >
           <IconChevronLeft />
-          Prev
+          {t('pagination.prev')}
         </button>
         <button
           className="btn"
           disabled={page === totalPages}
           onClick={() => onChange(page + 1)}
-          aria-label="Next page"
+          aria-label={t('pagination.next')}
         >
-          Next
+          {t('pagination.next')}
           <IconChevronRight />
         </button>
       </div>

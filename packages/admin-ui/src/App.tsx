@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HashRouter, Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { ShellLayout } from './app/Shell';
 import { loadPrefs, savePrefs, type AdminUiPrefs } from './app/prefs';
@@ -31,6 +32,7 @@ export function App() {
 }
 
 function AppInner() {
+  const { t } = useTranslation('common');
   const toast = useToast();
   const [prefs, setPrefs] = useState<AdminUiPrefs>(() => loadPrefs({ apiBaseUrl: getDefaultApiBaseUrl() }));
   const [adminToken, setAdminToken] = useState(() => loadAdminToken());
@@ -62,8 +64,8 @@ function AppInner() {
 
   const onAuthFailure = useCallback(() => {
     signOut();
-    toast.push({ title: 'Signed out', message: 'Authentication failed. Please sign in again with the admin token.' });
-  }, [signOut, toast]);
+    toast.push({ title: t('auth.signedOut'), message: t('auth.authFailedMessage') });
+  }, [signOut, toast, t]);
 
   const api = useMemo(
     () => createAdminApi({ baseUrl: prefs.apiBaseUrl, adminToken }, { onAuthFailure }),
@@ -225,7 +227,7 @@ function SettingsPageWrapper({
   return (
     <SettingsPage
       api={api}
-      value={{ apiBaseUrl: prefs.apiBaseUrl, theme: prefs.theme }}
+      value={{ apiBaseUrl: prefs.apiBaseUrl, theme: prefs.theme, locale: prefs.locale }}
       signedIn={signedIn}
       onChange={(next) => setPrefs((prev) => ({ ...prev, ...next }))}
       onGoToLogin={() => navigate('/login')}

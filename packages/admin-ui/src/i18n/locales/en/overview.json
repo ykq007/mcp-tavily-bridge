@@ -1,0 +1,29 @@
+{
+  "title": "Overview",
+  "subtitle": "Keys, client tokens, and recent Tavily usage",
+  "actions": {
+    "refresh": "Refresh",
+    "viewAll": "View all"
+  },
+  "kpi": {
+    "tavilyKeys": "Tavily keys",
+    "keysHint": "{{active}} active \u2022 {{unhealthy}} cooldown/invalid",
+    "clientTokens": "Client tokens",
+    "tokensHint": "{{active}} active \u2022 {{revoked}} revoked",
+    "usage": "Usage",
+    "usageHint": "Last 10 events"
+  },
+  "recentUsage": {
+    "title": "Recent usage",
+    "subtitle": "Newest first"
+  },
+  "table": {
+    "time": "Time",
+    "tool": "Tool",
+    "outcome": "Outcome",
+    "query": "Query"
+  },
+  "empty": {
+    "noUsage": "No usage yet."
+  }
+}

@@ -11,12 +11,28 @@ export function formatDateTime(value: string | null | undefined): string {
   }).format(date);
 }
 
-export function formatRelativeSeconds(seconds: number | null | undefined): string {
-  if (!seconds || seconds <= 0) return 'No expiry';
-  if (seconds < 60) return `${seconds}s`;
-  if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
-  if (seconds < 86400) return `${Math.round(seconds / 3600)}h`;
-  return `${Math.round(seconds / 86400)}d`;
+export type TimeTranslator = (key: string, options?: { count: number }) => string;
+
+export function formatRelativeSeconds(
+  seconds: number | null | undefined,
+  t?: TimeTranslator
+): string {
+  if (!seconds || seconds <= 0) {
+    return t ? t('noExpiry') : 'No expiry';
+  }
+  if (seconds < 60) {
+    return t ? t('seconds', { count: seconds }) : `${seconds}s`;
+  }
+  if (seconds < 3600) {
+    const mins = Math.round(seconds / 60);
+    return t ? t('minutes', { count: mins }) : `${mins}m`;
+  }
+  if (seconds < 86400) {
+    const hours = Math.round(seconds / 3600);
+    return t ? t('hours', { count: hours }) : `${hours}h`;
+  }
+  const days = Math.round(seconds / 86400);
+  return t ? t('days', { count: days }) : `${days}d`;
 }
 
 export function maskSecret(token: string): string {

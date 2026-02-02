@@ -1,0 +1,31 @@
+{
+  "brand": "Tavily Bridge",
+  "subtitle": "Admin console",
+  "pages": {
+    "overview": "Overview",
+    "keys": "Keys",
+    "tokens": "Tokens",
+    "usage": "Usage",
+    "settings": "Settings"
+  },
+  "pageSubtitles": {
+    "overview": "System status",
+    "keys": "Manage API key pool",
+    "tokens": "Manage access tokens",
+    "usage": "What Tavily is used for",
+    "settings": "Preferences and configuration"
+  },
+  "theme": {
+    "toggle": "Theme",
+    "light": "Light mode",
+    "dark": "Dark mode",
+    "switchTo": "Switch to {{mode}} mode"
+  },
+  "sidebar": {
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar"
+  },
+  "connection": "Connection"
+}

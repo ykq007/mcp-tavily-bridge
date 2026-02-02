@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { IconChevronLeft, IconChevronRight, IconKey, IconMoon, IconSearch, IconSettings, IconShield, IconSun, IconToken } from '../ui/icons';
 import type { Theme } from './prefs';
@@ -8,24 +9,24 @@ export type PageId = 'overview' | 'keys' | 'tokens' | 'usage' | 'settings' | 'lo
 interface NavItemDef {
   path: string;
   icon: React.ReactNode;
-  label: string;
+  labelKey: string;
   requiresAuth: boolean;
 }
 
 const navItems: NavItemDef[] = [
-  { path: '/', icon: <IconShield />, label: 'Overview', requiresAuth: true },
-  { path: '/keys', icon: <IconKey />, label: 'Keys', requiresAuth: true },
-  { path: '/tokens', icon: <IconToken />, label: 'Tokens', requiresAuth: true },
-  { path: '/usage', icon: <IconSearch />, label: 'Usage', requiresAuth: true },
-  { path: '/settings', icon: <IconSettings />, label: 'Settings', requiresAuth: false }
+  { path: '/', icon: <IconShield />, labelKey: 'pages.overview', requiresAuth: true },
+  { path: '/keys', icon: <IconKey />, labelKey: 'pages.keys', requiresAuth: true },
+  { path: '/tokens', icon: <IconToken />, labelKey: 'pages.tokens', requiresAuth: true },
+  { path: '/usage', icon: <IconSearch />, labelKey: 'pages.usage', requiresAuth: true },
+  { path: '/settings', icon: <IconSettings />, labelKey: 'pages.settings', requiresAuth: false }
 ];
 
-const pageInfo: Record<string, { title: string; subtitle: string }> = {
-  '/': { title: 'Overview', subtitle: 'System status' },
-  '/keys': { title: 'Tavily Keys', subtitle: 'Manage API key pool' },
-  '/tokens': { title: 'Client Tokens', subtitle: 'Manage access tokens' },
-  '/usage': { title: 'Usage', subtitle: 'What Tavily is used for' },
-  '/settings': { title: 'Settings', subtitle: 'Preferences and configuration' }
+const pageInfoKeys: Record<string, { titleKey: string; subtitleKey: string }> = {
+  '/': { titleKey: 'pages.overview', subtitleKey: 'pageSubtitles.overview' },
+  '/keys': { titleKey: 'pages.keys', subtitleKey: 'pageSubtitles.keys' },
+  '/tokens': { titleKey: 'pages.tokens', subtitleKey: 'pageSubtitles.tokens' },
+  '/usage': { titleKey: 'pages.usage', subtitleKey: 'pageSubtitles.usage' },
+  '/settings': { titleKey: 'pages.settings', subtitleKey: 'pageSubtitles.settings' }
 };
 
 export function ShellLayout({
@@ -43,11 +44,17 @@ export function ShellLayout({
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;
 }) {
+  const { t } = useTranslation('nav');
   const location = useLocation();
-  const info = pageInfo[location.pathname] || { title: 'Admin', subtitle: '' };
+  const infoKeys = pageInfoKeys[location.pathname] || { titleKey: 'pages.overview', subtitleKey: '' };
+  const title = t(infoKeys.titleKey);
+  const subtitle = infoKeys.subtitleKey ? t(infoKeys.subtitleKey) : '';
 
   // Filter nav items based on auth state
   const visibleNavItems = navItems.filter((item) => signedIn || !item.requiresAuth);
+
+  const themeModeLabel = theme === 'light' ? t('theme.dark') : t('theme.light');
+  const themeSwitchLabel = t('theme.switchTo', { mode: theme === 'light' ? t('theme.dark') : t('theme.light') });
 
   return (
     <div className={`appFrame${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
@@ -58,37 +65,40 @@ export function ShellLayout({
             <div className="navTitle">
               <IconShield title="Admin" />
               <div className="navTitleText">
-                <div className="navBrand">Tavily Bridge</div>
-                <div className="help">Admin console</div>
+                <div className="navBrand">{t('brand')}</div>
+                <div className="help">{t('subtitle')}</div>
               </div>
             </div>
           </div>
           <nav className="nav" aria-label="Admin navigation">
-            {visibleNavItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) => `navItem${isActive ? ' navItem--active' : ''}`}
-                data-active={location.pathname === item.path}
-                end={item.path === '/'}
-                title={sidebarCollapsed ? item.label : undefined}
-              >
-                <span className="navItemIcon">{item.icon}</span>
-                <span className="navItemLabel">{item.label}</span>
-              </NavLink>
-            ))}
+            {visibleNavItems.map((item) => {
+              const label = t(item.labelKey);
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={({ isActive }) => `navItem${isActive ? ' navItem--active' : ''}`}
+                  data-active={location.pathname === item.path}
+                  end={item.path === '/'}
+                  title={sidebarCollapsed ? label : undefined}
+                >
+                  <span className="navItemIcon">{item.icon}</span>
+                  <span className="navItemLabel">{label}</span>
+                </NavLink>
+              );
+            })}
           </nav>
           <div className="navFooter">
-            <button className="themeToggle" onClick={onToggleTheme} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`} title={sidebarCollapsed ? (theme === 'light' ? 'Dark mode' : 'Light mode') : undefined}>
+            <button className="themeToggle" onClick={onToggleTheme} aria-label={themeSwitchLabel} title={sidebarCollapsed ? themeModeLabel : undefined}>
               {theme === 'light' ? <IconMoon /> : <IconSun />}
-              <span>{theme === 'light' ? 'Dark mode' : 'Light mode'}</span>
+              <span>{themeModeLabel}</span>
             </button>
-            <button className="sidebarToggle" onClick={onToggleSidebar} aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={sidebarCollapsed ? 'Expand' : 'Collapse'}>
+            <button className="sidebarToggle" onClick={onToggleSidebar} aria-label={sidebarCollapsed ? t('sidebar.expandSidebar') : t('sidebar.collapseSidebar')} title={sidebarCollapsed ? t('sidebar.expand') : t('sidebar.collapse')}>
               {sidebarCollapsed ? <IconChevronRight /> : <IconChevronLeft />}
-              <span>{sidebarCollapsed ? 'Expand' : 'Collapse'}</span>
+              <span>{sidebarCollapsed ? t('sidebar.expand') : t('sidebar.collapse')}</span>
             </button>
             <div className="navConnectionInfo">
-              <div className="help">Connection</div>
+              <div className="help">{t('connection')}</div>
               <div className="mono navConnectionSummary">
                 {connectionSummary}
               </div>
@@ -99,8 +109,8 @@ export function ShellLayout({
         <main className="mainPanel">
           <header className="appHeader">
             <div className="topbarTitle">
-              <div className="h1">{info.title}</div>
-              <div className="help">{info.subtitle}</div>
+              <div className="h1">{title}</div>
+              <div className="help">{subtitle}</div>
             </div>
           </header>
           <div className="mainBody">
@@ -111,27 +121,30 @@ export function ShellLayout({
 
       {/* Mobile Bottom Navigation */}
       <nav className="mobileNav" aria-label="Mobile navigation">
-        {visibleNavItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className="mobileNavItem"
-            data-active={location.pathname === item.path}
-            aria-label={item.label}
-            aria-current={location.pathname === item.path ? 'page' : undefined}
-            end={item.path === '/'}
-          >
-            {item.icon}
-            <span>{item.label}</span>
-          </NavLink>
-        ))}
+        {visibleNavItems.map((item) => {
+          const label = t(item.labelKey);
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className="mobileNavItem"
+              data-active={location.pathname === item.path}
+              aria-label={label}
+              aria-current={location.pathname === item.path ? 'page' : undefined}
+              end={item.path === '/'}
+            >
+              {item.icon}
+              <span>{label}</span>
+            </NavLink>
+          );
+        })}
         <button
           className="mobileNavItem"
           onClick={onToggleTheme}
-          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+          aria-label={themeSwitchLabel}
         >
           {theme === 'light' ? <IconMoon /> : <IconSun />}
-          <span>Theme</span>
+          <span>{t('theme.toggle')}</span>
         </button>
       </nav>
     </div>

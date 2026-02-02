@@ -1,0 +1,51 @@
+{
+  "actions": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "copy": "Copy",
+    "close": "Close",
+    "confirm": "Confirm",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "settings": "Settings"
+  },
+  "status": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "deleting": "Deleting...",
+    "checking": "Checking..."
+  },
+  "pagination": {
+    "showing": "Showing <strong>{{start}}</strong> to <strong>{{end}}</strong> of <strong>{{total}}</strong> results",
+    "prev": "Prev",
+    "next": "Next"
+  },
+  "errors": {
+    "loadingData": "Error loading data",
+    "unknownError": "Unknown error"
+  },
+  "confirm": {
+    "typeToConfirm": "Type to confirm",
+    "typePlaceholder": "Type {{text}} to confirm",
+    "cannotUndo": "This action cannot be undone."
+  },
+  "copy": {
+    "copied": "Copied to clipboard",
+    "failed": "Copy failed",
+    "permissionDenied": "Clipboard permission denied"
+  },
+  "time": {
+    "noExpiry": "No expiry",
+    "seconds": "{{count}}s",
+    "minutes": "{{count}}m",
+    "hours": "{{count}}h",
+    "days": "{{count}}d"
+  },
+  "auth": {
+    "signedOut": "Signed out",
+    "authFailedMessage": "Authentication failed. Please sign in again with the admin token."
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "title": "Sign in",
+  "subtitle": "Use the server ADMIN_API_TOKEN to access the admin console",
+  "form": {
+    "tokenLabel": "Admin API token",
+    "tokenPlaceholder": "ADMIN_API_TOKEN",
+    "tokenHelp": "Paste the admin token that the server was started with. This is not a client token.",
+    "remember": "Remember on this device (stores token in localStorage)"
+  },
+  "pill": {
+    "info": "Signed-in sessions can manage keys/tokens. Client tokens are for MCP clients and should never be used to sign into the admin console."
+  },
+  "toast": {
+    "tokenRequired": "Admin token required",
+    "tokenRequiredMessage": "Paste the server ADMIN_API_TOKEN to sign in.",
+    "signedIn": "Signed in",
+    "authFailed": "Authentication failed (401)",
+    "authFailedMessage": "Admin token is invalid. It must match the bridge server environment variable ADMIN_API_TOKEN.",
+    "notFound": "Not found (404)",
+    "notFoundMessage": "Check the Admin API base URL and ensure the bridge server exposes /admin/api/* routes.",
+    "networkError": "Network/CORS error",
+    "networkErrorMessage": "Could not reach Admin API. In local dev, start bridge-server at http://127.0.0.1:8787 and rely on the Vite /admin proxy (leave base URL empty), or set base URL explicitly.",
+    "signInFailed": "Sign in failed"
+  }
+}

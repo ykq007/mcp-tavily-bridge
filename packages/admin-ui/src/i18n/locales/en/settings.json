@@ -1,0 +1,68 @@
+{
+  "title": "Settings",
+  "subtitle": "Where to send admin requests and how to authenticate",
+  "actions": {
+    "testConnection": "Test connection"
+  },
+  "apiBaseUrl": {
+    "label": "Admin API base URL",
+    "placeholder": "(empty = same origin)",
+    "help": "In production, leave this empty when served from the bridge server. In dev, set to e.g. <mono>http://127.0.0.1:8787</mono>.",
+    "schemeTip": "Tip: include http:// or https:// (e.g. http://127.0.0.1:8787)"
+  },
+  "auth": {
+    "label": "Authentication",
+    "status": "Status:",
+    "signedIn": "signed in",
+    "signedOut": "signed out",
+    "changeToken": "Change token",
+    "help": "Sign in (or Change token) uses the server ADMIN_API_TOKEN. Client tokens are for MCP clients and are managed in Tokens."
+  },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "help": "Matches OS by default."
+  },
+  "language": {
+    "label": "Language",
+    "help": "Select your preferred language."
+  },
+  "notes": {
+    "label": "Notes",
+    "help": "The Admin UI cannot set server environment variables. The token you enter must match what the server was started with."
+  },
+  "server": {
+    "label": "Server",
+    "signInRequired": "Sign in to view server-side settings.",
+    "loadError": "Unable to load server info",
+    "keySelection": "Upstream key selection",
+    "roundRobin": "Round robin",
+    "random": "Random",
+    "keySelectionHelp": "Persists on the server. When unset, it falls back to <mono>TAVILY_KEY_SELECTION_STRATEGY</mono> (<mono>round_robin</mono> or <mono>random</mono>)."
+  },
+  "rotation": {
+    "label": "Rotation behavior",
+    "help": "Key selection is evaluated per upstream request attempt and will fail over to another key on invalid/limited keys."
+  },
+  "pill": {
+    "envVars": "Server must be started with <mono>ADMIN_API_TOKEN</mono> and <mono>KEY_ENCRYPTION_SECRET</mono>."
+  },
+  "toast": {
+    "signInRequired": "Sign in required",
+    "signInRequiredMessage": "Sign in with the admin token to update server settings.",
+    "updated": "Updated",
+    "updatedMessage": "Upstream key selection set to {{strategy}}.",
+    "updateFailed": "Update failed",
+    "connected": "Connected",
+    "connectedMessage": "Admin API authenticated successfully.",
+    "authFailed": "Authentication failed (401)",
+    "authFailedMessage": "Admin token is invalid. It must match the bridge server environment variable ADMIN_API_TOKEN.",
+    "notFound": "Not found (404)",
+    "notFoundMessage": "Check the Admin API base URL and ensure the bridge server exposes /admin/api/* routes.",
+    "networkError": "Network/CORS error",
+    "networkErrorMessage": "Could not reach Admin API. In local dev, start bridge-server at http://127.0.0.1:8787 and rely on the Vite /admin/api proxy (leave base URL empty), or set base URL explicitly.",
+    "connectionFailed": "Connection failed",
+    "goToLoginMessage": "Go to Login and enter the server ADMIN_API_TOKEN first."
+  }
+}

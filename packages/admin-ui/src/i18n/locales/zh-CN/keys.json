@@ -1,0 +1,120 @@
+{
+  "title": "Tavily 密钥",
+  "stats": {
+    "total": "共 {{count}} 个",
+    "active": "{{count}} 个活跃",
+    "cooldown": "{{count}} 个冷却中",
+    "invalid": "{{count}} 个无效",
+    "disabled": "{{count}} 个已禁用",
+    "summary": "共 {{total}} 个 \u2022 {{active}} 个活跃 \u2022 {{cooldown}} 个冷却中 \u2022 {{invalid}} 个无效 \u2022 {{disabled}} 个已禁用"
+  },
+  "kpi": {
+    "totalCapacity": "总容量",
+    "activeKeys": "活跃密钥",
+    "systemHealth": "系统健康度"
+  },
+  "actions": {
+    "addKey": "添加密钥",
+    "refresh": "刷新",
+    "checkCredits": "检查额度",
+    "checkingCredits": "检查中..."
+  },
+  "search": {
+    "placeholder": "按标签搜索密钥...",
+    "showing": "显示 {{filtered}} / {{total}} 个密钥",
+    "clearFilters": "清除筛选"
+  },
+  "filter": {
+    "allStatuses": "所有状态",
+    "active": "活跃",
+    "disabled": "已禁用",
+    "cooldown": "冷却中",
+    "invalid": "无效"
+  },
+  "sort": {
+    "newestFirst": "最新优先",
+    "oldestFirst": "最早优先",
+    "labelAZ": "标签 A-Z",
+    "labelZA": "标签 Z-A",
+    "recentlyUsed": "最近使用",
+    "statusAZ": "状态 A-Z"
+  },
+  "bulk": {
+    "selected": "已选择 <strong>{{count}}</strong> 个密钥",
+    "selectedCount_one": "已选择 {{count}} 个密钥",
+    "selectedCount_other": "已选择 {{count}} 个密钥",
+    "refreshCredits": "刷新额度",
+    "deleteSelected": "删除所选",
+    "clearSelection": "清除选择"
+  },
+  "table": {
+    "label": "标签",
+    "apiKey": "API 密钥",
+    "credits": "额度",
+    "status": "状态",
+    "lastUsed": "最后使用",
+    "created": "创建时间",
+    "actions": "操作",
+    "select": "选择",
+    "selectAll": "全选",
+    "selectKey": "选择 {{label}}"
+  },
+  "empty": {
+    "noKeys": "暂无密钥。添加一个密钥以开始轮换。",
+    "noMatch": "没有匹配的密钥。"
+  },
+  "dialog": {
+    "addTitle": "添加 Tavily 密钥",
+    "deleteTitle": "删除密钥",
+    "deleteSelectedTitle": "删除所选密钥",
+    "deleteDescription": "永久删除 \"{{label}}\"。",
+    "deleteSelectedDescription": "永久删除 {{count}} 个所选密钥。",
+    "deleteSelectedDescription_one": "永久删除 {{count}} 个所选密钥。",
+    "deleteSelectedDescription_other": "永久删除 {{count}} 个所选密钥。",
+    "requireDeleteText": "输入 DELETE 以永久删除此密钥",
+    "requireDeleteSelectedText": "输入 DELETE 以永久删除所选密钥"
+  },
+  "form": {
+    "label": "标签",
+    "labelRequired": "标签为必填项",
+    "labelMinLength": "标签至少需要 2 个字符",
+    "labelHelp": "必须唯一。",
+    "labelPlaceholder": "例如 prod-key-01",
+    "apiKey": "API 密钥",
+    "apiKeyRequired": "API 密钥为必填项",
+    "apiKeyFormat": "API 密钥应以 \"tvly-\" 开头",
+    "apiKeyHelp": "在服务器端加密存储。",
+    "apiKeyPlaceholder": "tvly-...",
+    "required": "*"
+  },
+  "toast": {
+    "added": "密钥已添加",
+    "addedMessage": "已保存 \"{{name}}\"",
+    "createFailed": "创建失败",
+    "updated": "密钥已更新",
+    "updatedMessage": "状态已设置为 {{status}}",
+    "updateFailed": "更新失败",
+    "deleted": "密钥已删除",
+    "deletedMessage": "已删除 \"{{name}}\"",
+    "deleteFailed": "删除失败",
+    "checkingCredits": "正在检查额度...",
+    "checkingCreditsMessage": "正在更新所有密钥的额度",
+    "creditsUpdated": "额度已更新",
+    "creditsUpdatedMessage": "已检查 {{total}} 个密钥（{{success}} 个成功，{{failed}} 个失败）",
+    "syncFailed": "同步失败",
+    "syncing": "同步中...",
+    "syncingMessage": "正在刷新 {{count}} 个密钥",
+    "syncSuccess": "成功",
+    "syncSuccessMessage": "已刷新 {{count}} 个密钥",
+    "bulkRefreshFailed": "批量刷新失败",
+    "bulkDeleting": "删除中...",
+    "bulkDeletingMessage": "正在删除 {{count}} 个密钥",
+    "bulkDeleted": "已删除",
+    "bulkDeletedMessage": "已删除 {{count}} 个密钥",
+    "bulkDeleteFailed": "批量删除失败"
+  },
+  "button": {
+    "adding": "添加中...",
+    "deleteKey": "删除密钥"
+  }
+}

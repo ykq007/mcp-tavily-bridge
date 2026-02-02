@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import type { AdminApi, ClientTokenDto } from '../lib/adminApi';
 import { formatDateTime, formatRelativeSeconds } from '../lib/format';
@@ -17,6 +18,8 @@ import { DataTable, type DataTableColumn } from '../ui/DataTable';
 const PAGE_SIZE = 10;
 
 export function TokensPage({ api, apiBaseUrl }: { api: AdminApi; apiBaseUrl: string }) {
+  const { t } = useTranslation('tokens');
+  const { t: tc } = useTranslation('common');
   const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [tokens, setTokens] = useState<ClientTokenDto[]>([]);
@@ -66,19 +69,19 @@ export function TokensPage({ api, apiBaseUrl }: { api: AdminApi; apiBaseUrl: str
     try {
       setTokens(await api.listTokens());
     } catch (e: any) {
-      setError(typeof e?.message === 'string' ? e.message : 'Failed to load tokens');
+      setError(typeof e?.message === 'string' ? e.message : tc('errors.unknownError'));
       setTokens([]);
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, tc]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
   const stats = useMemo(() => {
-    const active = tokens.filter((t) => !t.revokedAt).length;
+    const active = tokens.filter((tok) => !tok.revokedAt).length;
     return { active, total: tokens.length };
   }, [tokens]);
 
@@ -100,10 +103,10 @@ export function TokensPage({ api, apiBaseUrl }: { api: AdminApi; apiBaseUrl: str
       setSetupClientToken(res.token);
       setDescription('');
       setExpiresInSeconds('');
-      toast.push({ title: 'Token created', message: 'Copy it now; it will not be shown again.' });
+      toast.push({ title: t('toast.created'), message: t('toast.createdMessage') });
       await load();
     } catch (e: any) {
-      toast.push({ title: 'Create failed', message: typeof e?.message === 'string' ? e.message : 'Unknown error' });
+      toast.push({ title: t('toast.createFailed'), message: typeof e?.message === 'string' ? e.message : tc('errors.unknownError') });
     } finally {
       setCreating(false);
     }
@@ -114,17 +117,17 @@ export function TokensPage({ api, apiBaseUrl }: { api: AdminApi; apiBaseUrl: str
     setDeleting(true);
     try {
       await api.deleteToken(tokenToDelete.id);
-      toast.push({ title: 'Token deleted', message: `Deleted "${tokenToDelete.tokenPrefix}"` });
+      toast.push({ title: t('toast.deleted'), message: t('toast.deletedMessage', { prefix: tokenToDelete.tokenPrefix }) });
       setTokenToDelete(null);
       await load();
     } catch (e: any) {
-      toast.push({ title: 'Delete failed', message: typeof e?.message === 'string' ? e.message : 'Unknown error' });
+      toast.push({ title: t('toast.deleteFailed'), message: typeof e?.message === 'string' ? e.message : tc('errors.unknownError') });
     } finally {
       setDeleting(false);
     }
   }
 
-  const activeTarget = useMemo(() => MCP_SETUP_TARGETS.find((t) => t.id === activeTargetId) ?? MCP_SETUP_TARGETS[0]!, [activeTargetId]);
+  const activeTarget = useMemo(() => MCP_SETUP_TARGETS.find((target) => target.id === activeTargetId) ?? MCP_SETUP_TARGETS[0]!, [activeTargetId]);
   const activeSnippet = useMemo(() => activeTarget.render({ apiBaseUrl, origin, clientToken: setupClientToken }), [activeTarget, apiBaseUrl, origin, setupClientToken]);
 
   return (
@@ -133,22 +136,22 @@ export function TokensPage({ api, apiBaseUrl }: { api: AdminApi; apiBaseUrl: str
         <div className="cardHeader">
           <div className="row">
             <div>
-              <div className="h2">Client tokens</div>
+              <div className="h2">{t('title')}</div>
               <div className="help">
-                {stats.total} total • {stats.active} active
+                {stats.total} {t('stats.total', { count: stats.total }).replace(`${stats.total} `, '')} • {stats.active} {t('stats.active', { count: stats.active }).replace(`${stats.active} `, '')}
               </div>
             </div>
             <div className="flex gap-3 items-center">
               <button className="btn" data-variant="ghost" onClick={() => setDrawerOpen(true)}>
-                Setup Info
+                {t('actions.setupInfo')}
               </button>
               <button className="btn" onClick={load} disabled={loading}>
                 <IconRefresh />
-                Refresh
+                {t('actions.refresh')}
               </button>
               <button className="btn" data-variant="primary" onClick={() => setCreateOpen(true)}>
                 <IconPlus />
-                Create token
+                {t('actions.createToken')}
               </button>
             </div>
           </div>
@@ -160,67 +163,67 @@ export function TokensPage({ api, apiBaseUrl }: { api: AdminApi; apiBaseUrl: str
             </div>
           ) : null}
           <DataTable
-            ariaLabel="Client tokens"
+            ariaLabel={t('title')}
             columns={(
               [
                 {
                   id: 'prefix',
-                  header: 'Prefix',
-                  dataLabel: 'Prefix',
+                  header: t('table.prefix'),
+                  dataLabel: t('table.prefix'),
                   cellClassName: 'mono',
-                  cell: (t: ClientTokenDto) => t.tokenPrefix
+                  cell: (tok: ClientTokenDto) => tok.tokenPrefix
                 },
                 {
                   id: 'description',
-                  header: 'Description',
-                  dataLabel: 'Description',
+                  header: t('table.description'),
+                  dataLabel: t('table.description'),
                   cellClassName: 'muted',
-                  cell: (t: ClientTokenDto) => t.description ?? '—'
+                  cell: (tok: ClientTokenDto) => tok.description ?? '—'
                 },
                 {
                   id: 'expires',
-                  header: 'Expires',
+                  header: t('table.expires'),
                   headerStyle: { width: 170 },
-                  dataLabel: 'Expires',
+                  dataLabel: t('table.expires'),
                   cellClassName: 'mono',
-                  cell: (t: ClientTokenDto) => formatDateTime(t.expiresAt)
+                  cell: (tok: ClientTokenDto) => formatDateTime(tok.expiresAt)
                 },
                 {
                   id: 'created',
-                  header: 'Created',
+                  header: t('table.created'),
                   headerStyle: { width: 150 },
-                  dataLabel: 'Created',
+                  dataLabel: t('table.created'),
                   cellClassName: 'mono',
-                  cell: (t: ClientTokenDto) => formatDateTime(t.createdAt)
+                  cell: (tok: ClientTokenDto) => formatDateTime(tok.createdAt)
                 },
                 {
                   id: 'actions',
-                  header: 'Actions',
+                  header: t('table.actions'),
                   headerStyle: { width: 100, textAlign: 'right' },
                   headerAlign: 'right',
-                  dataLabel: 'Actions',
+                  dataLabel: t('table.actions'),
                   cellAlign: 'right',
-                  cell: (t: ClientTokenDto) => (
+                  cell: (tok: ClientTokenDto) => (
                     <button
                       className="btn"
                       data-variant="danger"
-                      onClick={() => setTokenToDelete(t)}
+                      onClick={() => setTokenToDelete(tok)}
                       style={{ padding: '6px 12px', fontSize: 13 }}
                     >
-                      Delete
+                      {tc('actions.delete')}
                     </button>
                   )
                 }
               ] satisfies DataTableColumn<ClientTokenDto>[]
             )}
             rows={paginatedTokens}
-            rowKey={(t) => t.id}
+            rowKey={(tok) => tok.id}
             loading={loading}
             empty={
               <EmptyState
                 icon={<IconToken />}
-                message="No tokens yet. Create one to authorize clients."
-                action={{ label: 'Create token', onClick: () => setCreateOpen(true) }}
+                message={t('empty.noTokens')}
+                action={{ label: t('actions.createToken'), onClick: () => setCreateOpen(true) }}
                 compact
               />
             }
@@ -229,41 +232,39 @@ export function TokensPage({ api, apiBaseUrl }: { api: AdminApi; apiBaseUrl: str
         </div>
       </div>
 
-      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title="Client Setup">
+      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title={t('setup.title')}>
         <div className="stack gap-6">
             <div className="stack">
-              <div className="label">MCP endpoint</div>
-              <input className="input mono" value={mcpUrl} readOnly aria-label="MCP endpoint URL" />
-              <div className="help">
-                HTTP clients should call <span className="mono">/mcp</span> with <span className="mono">Authorization: Bearer &lt;client_token&gt;</span>.
-              </div>
+              <div className="label">{t('setup.mcpEndpoint')}</div>
+              <input className="input mono" value={mcpUrl} readOnly aria-label={t('setup.mcpEndpoint')} />
+              <div className="help" dangerouslySetInnerHTML={{ __html: t('setup.mcpEndpointHelp').replace(/<mono>/g, '<span class="mono">').replace(/<\/mono>/g, '</span>') }} />
             </div>
-            
+
             <div className="stack">
-              <div className="label">Client token (paste full token)</div>
+              <div className="label">{t('setup.clientToken')}</div>
               <input
                 className="input mono"
                 type="password"
                 value={setupClientToken}
                 onChange={(e) => setSetupClientToken(e.target.value)}
-                placeholder="<YOUR_CLIENT_TOKEN>"
+                placeholder={t('setup.clientTokenPlaceholder')}
                 autoComplete="off"
               />
-              <div className="help">Client tokens are shown once when created. Paste a valid token here to generate configuration snippets.</div>
+              <div className="help">{t('setup.clientTokenHelp')}</div>
             </div>
 
             <div className="stack gap-3">
-              <div className="label">Configuration Snippets</div>
+              <div className="label">{t('setup.configSnippets')}</div>
               <div className="flex flex-wrap gap-2">
-                {MCP_SETUP_TARGETS.map((t) => (
+                {MCP_SETUP_TARGETS.map((target) => (
                   <button
-                    key={t.id}
+                    key={target.id}
                     className="btn btn--sm"
-                    data-variant={t.id === activeTargetId ? 'primary' : 'ghost'}
-                    onClick={() => setActiveTargetId(t.id)}
-                    aria-pressed={t.id === activeTargetId}
+                    data-variant={target.id === activeTargetId ? 'primary' : 'ghost'}
+                    onClick={() => setActiveTargetId(target.id)}
+                    aria-pressed={target.id === activeTargetId}
                   >
-                    {t.title}
+                    {target.title}
                   </button>
                 ))}
               </div>
@@ -273,8 +274,8 @@ export function TokensPage({ api, apiBaseUrl }: { api: AdminApi; apiBaseUrl: str
                 <CopyButton
                   text={activeSnippet}
                   variant="primary"
-                  label="Copy snippet"
-                  buttonText="Copy snippet"
+                  label={t('setup.copySnippet')}
+                  buttonText={t('setup.copySnippet')}
                   disabled={!activeSnippet.trim()}
                 />
               </div>
@@ -288,16 +289,16 @@ export function TokensPage({ api, apiBaseUrl }: { api: AdminApi; apiBaseUrl: str
         </div>
       </Drawer>
 
-      <Dialog title="Create client token" open={createOpen} onClose={() => (creating ? null : setCreateOpen(false))}>
+      <Dialog title={t('dialog.createTitle')} open={createOpen} onClose={() => (creating ? null : setCreateOpen(false))}>
         <div className="stack">
           <div className="grid2">
             <div className="stack">
-              <label htmlFor="token-description-input" className="label">Description (optional)</label>
-              <input id="token-description-input" className="input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="e.g. staging automation" />
-              <div className="help">Shown in the token list to help you remember intent.</div>
+              <label htmlFor="token-description-input" className="label">{t('form.description')}</label>
+              <input id="token-description-input" className="input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('form.descriptionPlaceholder')} />
+              <div className="help">{t('form.descriptionHelp')}</div>
             </div>
             <div className="stack">
-              <label htmlFor="token-expires-input" className="label">Expires in (seconds)</label>
+              <label htmlFor="token-expires-input" className="label">{t('form.expiresIn')}</label>
               <input
                 id="token-expires-input"
                 className="input mono"
@@ -309,38 +310,38 @@ export function TokensPage({ api, apiBaseUrl }: { api: AdminApi; apiBaseUrl: str
                   const n = Number(next);
                   setExpiresInSeconds(Number.isFinite(n) ? Math.max(0, Math.floor(n)) : '');
                 }}
-                placeholder="e.g. 86400"
+                placeholder={t('form.expiresInPlaceholder')}
               />
               <div className="help">
-                {typeof expiresInSeconds === 'number' && expiresInSeconds > 0 ? `≈ ${formatRelativeSeconds(expiresInSeconds)}` : 'Leave empty for no expiry.'}
+                {typeof expiresInSeconds === 'number' && expiresInSeconds > 0 ? `≈ ${formatRelativeSeconds(expiresInSeconds, (key, opts) => tc(`time.${key}`, opts))}` : t('form.expiresInHelp')}
               </div>
             </div>
           </div>
 
           <div className="flex justify-end gap-3">
             <button className="btn" onClick={() => setCreateOpen(false)} disabled={creating}>
-              Cancel
+              {tc('actions.cancel')}
             </button>
             <button className="btn" data-variant="primary" onClick={onCreate} disabled={creating}>
               <IconToken />
-              Create token
+              {t('actions.createToken')}
             </button>
           </div>
         </div>
       </Dialog>
 
-      <Dialog title="Copy token" open={Boolean(createdToken)} onClose={() => setCreatedToken(null)}>
+      <Dialog title={t('dialog.copyTitle')} open={Boolean(createdToken)} onClose={() => setCreatedToken(null)}>
         <div className="stack">
           <div className="help">
-            This token is shown once. Store it securely. Anyone with this token can call your MCP server (subject to rate limits). Use it in the "Client setup" section below.
+            {t('copyDialog.warning')}
           </div>
           <div className="flex gap-3 items-center">
-            <input className="input mono" value={createdToken ?? ''} readOnly aria-label="Created token" />
+            <input className="input mono" value={createdToken ?? ''} readOnly aria-label={t('copyDialog.copyToken')} />
             <CopyButton
               text={createdToken ?? ''}
               variant="primary"
-              label="Copy token"
-              buttonText="Copy"
+              label={t('copyDialog.copyToken')}
+              buttonText={tc('actions.copy')}
               disabled={!createdToken}
             />
           </div>
@@ -349,12 +350,12 @@ export function TokensPage({ api, apiBaseUrl }: { api: AdminApi; apiBaseUrl: str
 
       <ConfirmDialog
         open={!!tokenToDelete}
-        title="Delete token"
-        description={`Delete "${tokenToDelete?.tokenPrefix ?? ''}" permanently.`}
-        confirmLabel="Delete"
+        title={t('dialog.deleteTitle')}
+        description={t('dialog.deleteDescription', { prefix: tokenToDelete?.tokenPrefix ?? '' })}
+        confirmLabel={tc('actions.delete')}
         confirmVariant="danger"
         requireText="DELETE"
-        requireTextLabel="Type DELETE to permanently delete this token"
+        requireTextLabel={t('dialog.requireDeleteText')}
         confirming={deleting}
         onClose={() => (deleting ? null : setTokenToDelete(null))}
         onConfirm={onDeleteToken}

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import type { AdminApi, TavilyKeyDto, TavilyKeyStatus } from '../lib/adminApi';
 import { formatDateTime } from '../lib/format';
@@ -22,6 +23,8 @@ type SortOrder = 'asc' | 'desc';
 const PAGE_SIZE = 10;
 
 export function KeysPage({ api }: { api: AdminApi }) {
+  const { t } = useTranslation('keys');
+  const { t: tc } = useTranslation('common');
   const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [keys, setKeys] = useState<TavilyKeyDto[]>([]);
@@ -67,12 +70,12 @@ export function KeysPage({ api }: { api: AdminApi }) {
     try {
       setKeys(await api.listKeys());
     } catch (e: any) {
-      setError(typeof e?.message === 'string' ? e.message : 'Failed to load keys');
+      setError(typeof e?.message === 'string' ? e.message : tc('errors.unknownError'));
       setKeys([]);
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, tc]);
 
   useEffect(() => {
     void load();
@@ -144,17 +147,17 @@ export function KeysPage({ api }: { api: AdminApi }) {
   const formErrors = useMemo(() => {
     const errors: { label?: string; apiKey?: string } = {};
     if (touched.label && !newLabel.trim()) {
-      errors.label = 'Label is required';
+      errors.label = t('form.labelRequired');
     } else if (touched.label && newLabel.length < 2) {
-      errors.label = 'Label must be at least 2 characters';
+      errors.label = t('form.labelMinLength');
     }
     if (touched.apiKey && !newApiKey.trim()) {
-      errors.apiKey = 'API key is required';
+      errors.apiKey = t('form.apiKeyRequired');
     } else if (touched.apiKey && !newApiKey.startsWith('tvly-')) {
-      errors.apiKey = 'API key should start with "tvly-"';
+      errors.apiKey = t('form.apiKeyFormat');
     }
     return errors;
-  }, [newLabel, newApiKey, touched]);
+  }, [newLabel, newApiKey, touched, t]);
 
   const isFormValid = !formErrors.label && !formErrors.apiKey && newLabel.trim() && newApiKey.trim();
 
@@ -174,14 +177,14 @@ export function KeysPage({ api }: { api: AdminApi }) {
     setCreating(true);
     try {
       await api.createKey({ label: newLabel.trim(), apiKey: newApiKey.trim() });
-      toast.push({ title: 'Key added', message: `Saved "${newLabel.trim()}"`, variant: 'success' });
+      toast.push({ title: t('toast.added'), message: t('toast.addedMessage', { name: newLabel.trim() }), variant: 'success' });
       setCreateOpen(false);
       setNewLabel('');
       setNewApiKey('');
       setTouched({});
       await load();
     } catch (e: any) {
-      toast.push({ title: 'Create failed', message: typeof e?.message === 'string' ? e.message : 'Unknown error', variant: 'error' });
+      toast.push({ title: t('toast.createFailed'), message: typeof e?.message === 'string' ? e.message : tc('errors.unknownError'), variant: 'error' });
     } finally {
       setCreating(false);
     }
@@ -190,10 +193,10 @@ export function KeysPage({ api }: { api: AdminApi }) {
   async function onUpdateStatus(id: string, status: TavilyKeyStatus) {
     try {
       await api.updateKeyStatus(id, status);
-      toast.push({ title: 'Key updated', message: `Status set to ${status}`, variant: 'success' });
+      toast.push({ title: t('toast.updated'), message: t('toast.updatedMessage', { status }), variant: 'success' });
       await load();
     } catch (e: any) {
-      toast.push({ title: 'Update failed', message: typeof e?.message === 'string' ? e.message : 'Unknown error', variant: 'error' });
+      toast.push({ title: t('toast.updateFailed'), message: typeof e?.message === 'string' ? e.message : tc('errors.unknownError'), variant: 'error' });
     }
   }
 
@@ -202,11 +205,11 @@ export function KeysPage({ api }: { api: AdminApi }) {
     setDeleting(true);
     try {
       await api.deleteKey(keyToDelete.id);
-      toast.push({ title: 'Key deleted', message: `Deleted "${keyToDelete.label}"`, variant: 'success' });
+      toast.push({ title: t('toast.deleted'), message: t('toast.deletedMessage', { name: keyToDelete.label }), variant: 'success' });
       setKeyToDelete(null);
       await load();
     } catch (e: any) {
-      toast.push({ title: 'Delete failed', message: typeof e?.message === 'string' ? e.message : 'Unknown error', variant: 'error' });
+      toast.push({ title: t('toast.deleteFailed'), message: typeof e?.message === 'string' ? e.message : tc('errors.unknownError'), variant: 'error' });
     } finally {
       setDeleting(false);
     }
@@ -216,16 +219,16 @@ export function KeysPage({ api }: { api: AdminApi }) {
     if (syncingCredits) return;
     setSyncingCredits(true);
     try {
-      toast.push({ title: 'Checking credits…', message: 'Updating credits for all keys', variant: 'info' });
+      toast.push({ title: t('toast.checkingCredits'), message: t('toast.checkingCreditsMessage'), variant: 'info' });
       const result = await api.syncAllKeyCredits();
       toast.push({
-        title: 'Credits updated',
-        message: `Checked ${result.total} keys (${result.success} ok, ${result.failed} failed)`,
+        title: t('toast.creditsUpdated'),
+        message: t('toast.creditsUpdatedMessage', { total: result.total, success: result.success, failed: result.failed }),
         variant: result.failed > 0 ? 'warning' : 'success'
       });
       await load();
     } catch (e: any) {
-      toast.push({ title: 'Sync failed', message: e.message, variant: 'error' });
+      toast.push({ title: t('toast.syncFailed'), message: e.message, variant: 'error' });
     } finally {
       setSyncingCredits(false);
     }
@@ -258,15 +261,15 @@ export function KeysPage({ api }: { api: AdminApi }) {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
 
-    toast.push({ title: 'Syncing...', message: `Refreshing ${ids.length} keys`, variant: 'info' });
+    toast.push({ title: t('toast.syncing'), message: t('toast.syncingMessage', { count: ids.length }), variant: 'info' });
 
     try {
       await Promise.all(ids.map(id => api.refreshKeyCredits(id)));
-      toast.push({ title: 'Success', message: `Refreshed ${ids.length} keys`, variant: 'success' });
+      toast.push({ title: t('toast.syncSuccess'), message: t('toast.syncSuccessMessage', { count: ids.length }), variant: 'success' });
       clearSelection();
       await load();
     } catch (e: any) {
-      toast.push({ title: 'Bulk refresh failed', message: e.message, variant: 'error' });
+      toast.push({ title: t('toast.bulkRefreshFailed'), message: e.message, variant: 'error' });
     }
   };
 
@@ -279,16 +282,16 @@ export function KeysPage({ api }: { api: AdminApi }) {
   const onBulkDelete = async () => {
     if (!bulkDeleteIds || bulkDeleteIds.length === 0) return;
     setBulkDeleting(true);
-    toast.push({ title: 'Deleting...', message: `Removing ${bulkDeleteIds.length} keys`, variant: 'info' });
+    toast.push({ title: t('toast.bulkDeleting'), message: t('toast.bulkDeletingMessage', { count: bulkDeleteIds.length }), variant: 'info' });
 
     try {
       await Promise.all(bulkDeleteIds.map(id => api.deleteKey(id)));
-      toast.push({ title: 'Deleted', message: `Removed ${bulkDeleteIds.length} keys`, variant: 'success' });
+      toast.push({ title: t('toast.bulkDeleted'), message: t('toast.bulkDeletedMessage', { count: bulkDeleteIds.length }), variant: 'success' });
       clearSelection();
       setBulkDeleteIds(null);
       await load();
     } catch (e: any) {
-      toast.push({ title: 'Bulk delete failed', message: e.message, variant: 'error' });
+      toast.push({ title: t('toast.bulkDeleteFailed'), message: e.message, variant: 'error' });
     } finally {
       setBulkDeleting(false);
     }
@@ -301,19 +304,19 @@ export function KeysPage({ api }: { api: AdminApi }) {
       {/* 2026: KPI Dashboard */}
       <div className="kpis">
         <KpiCard
-          title="Total Capacity"
+          title={t('kpi.totalCapacity')}
           value={stats.totalCredits.toLocaleString()}
           icon={<IconToken />}
           variant="tokens"
         />
         <KpiCard
-          title="Active Keys"
+          title={t('kpi.activeKeys')}
           value={`${stats.active}/${stats.total}`}
           icon={<IconKey />}
           variant="keys"
         />
         <KpiCard
-          title="System Health"
+          title={t('kpi.systemHealth')}
           value={`${stats.activeRate}%`}
           icon={<IconShield />}
           variant="usage"
@@ -324,7 +327,7 @@ export function KeysPage({ api }: { api: AdminApi }) {
         <div className="cardHeader">
           <div className="row">
             <div>
-              <div className="h2">Tavily keys</div>
+              <div className="h2">{t('title')}</div>
               <div className="help">
                 {stats.total} total • {stats.active} active • {stats.cooldown} cooldown • {stats.invalid} invalid •{' '}
                 {stats.disabled} disabled
@@ -333,21 +336,21 @@ export function KeysPage({ api }: { api: AdminApi }) {
             <div className="flex gap-3 items-center">
               <button className="btn" onClick={load} disabled={loading}>
                 <IconRefresh className={loading ? 'spin' : ''} />
-                Refresh
+                {t('actions.refresh')}
               </button>
               <button
                 className="btn"
                 onClick={onSyncAll}
-                title="Check credits for all keys"
+                title={t('actions.checkCredits')}
                 disabled={syncingCredits}
                 style={{ minWidth: 140 }}
               >
                 <IconRefresh className={syncingCredits ? 'spin' : ''} />
-                {syncingCredits ? 'Checking…' : 'Check Credits'}
+                {syncingCredits ? t('actions.checkingCredits') : t('actions.checkCredits')}
               </button>
               <button className="btn" data-variant="primary" onClick={() => setCreateOpen(true)}>
                 <IconPlus />
-                Add key
+                {t('actions.addKey')}
               </button>
             </div>
           </div>
@@ -364,7 +367,7 @@ export function KeysPage({ api }: { api: AdminApi }) {
               <input
                 type="search"
                 className="input"
-                placeholder="Search keys by label..."
+                placeholder={t('search.placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ paddingLeft: 40 }}
@@ -378,11 +381,11 @@ export function KeysPage({ api }: { api: AdminApi }) {
               onChange={(e) => setStatusFilter(e.target.value as 'all' | TavilyKeyStatus)}
               style={{ minWidth: 150 }}
             >
-              <option value="all">All statuses</option>
-              <option value="active">Active</option>
-              <option value="disabled">Disabled</option>
-              <option value="cooldown">Cooldown</option>
-              <option value="invalid">Invalid</option>
+              <option value="all">{t('filter.allStatuses')}</option>
+              <option value="active">{t('filter.active')}</option>
+              <option value="disabled">{t('filter.disabled')}</option>
+              <option value="cooldown">{t('filter.cooldown')}</option>
+              <option value="invalid">{t('filter.invalid')}</option>
             </select>
 
             {/* Sort selector */}
@@ -392,23 +395,23 @@ export function KeysPage({ api }: { api: AdminApi }) {
               onChange={(e) => handleSortChange(e.target.value)}
               style={{ minWidth: 160 }}
             >
-              <option value="createdAt-desc">Newest first</option>
-              <option value="createdAt-asc">Oldest first</option>
-              <option value="label-asc">Label A-Z</option>
-              <option value="label-desc">Label Z-A</option>
-              <option value="lastUsedAt-desc">Recently used</option>
-              <option value="status-asc">Status A-Z</option>
+              <option value="createdAt-desc">{t('sort.newestFirst')}</option>
+              <option value="createdAt-asc">{t('sort.oldestFirst')}</option>
+              <option value="label-asc">{t('sort.labelAZ')}</option>
+              <option value="label-desc">{t('sort.labelZA')}</option>
+              <option value="lastUsedAt-desc">{t('sort.recentlyUsed')}</option>
+              <option value="status-asc">{t('sort.statusAZ')}</option>
             </select>
           </div>
 
           {/* Results count */}
           <div className="filterResults">
             <span>
-              Showing {filteredKeys.length} of {keys.length} keys
+              {t('search.showing', { filtered: filteredKeys.length, total: keys.length })}
             </span>
             {hasFilters && (
               <button className="btn btn--xs" data-variant="ghost" onClick={clearFilters}>
-                Clear filters
+                {t('search.clearFilters')}
               </button>
             )}
           </div>
@@ -421,16 +424,16 @@ export function KeysPage({ api }: { api: AdminApi }) {
               <strong>{selectedIds.size}</strong> {selectedIds.size === 1 ? 'key' : 'keys'} selected
             </div>
             <div className="bulkActionsButtons">
-              <button className="btn" onClick={bulkRefreshCredits} title="Refresh credits for selected keys">
+              <button className="btn" onClick={bulkRefreshCredits} title={t('bulk.refreshCredits')}>
                 <IconRefresh />
-                Refresh Credits
+                {t('bulk.refreshCredits')}
               </button>
-              <button className="btn" data-variant="danger" onClick={bulkDelete} title="Delete selected keys">
+              <button className="btn" data-variant="danger" onClick={bulkDelete} title={t('bulk.deleteSelected')}>
                 <IconTrash />
-                Delete Selected
+                {t('bulk.deleteSelected')}
               </button>
               <button className="btn" data-variant="ghost" onClick={clearSelection}>
-                Clear Selection
+                {t('bulk.clearSelection')}
               </button>
             </div>
           </div>
@@ -444,7 +447,7 @@ export function KeysPage({ api }: { api: AdminApi }) {
           ) : null}
 
           <DataTable
-            ariaLabel="Tavily keys"
+            ariaLabel={t('title')}
             columns={(
               [
                 {
@@ -454,35 +457,35 @@ export function KeysPage({ api }: { api: AdminApi }) {
                       type="checkbox"
                       checked={selectedIds.size === paginatedKeys.length && paginatedKeys.length > 0}
                       onChange={toggleSelectAll}
-                      aria-label="Select all keys"
+                      aria-label={t('table.selectAll')}
                       style={{ cursor: 'pointer' }}
                     />
                   ),
                   headerStyle: { width: 40 },
-                  dataLabel: 'Select',
+                  dataLabel: t('table.select'),
                   cell: (k: TavilyKeyDto) => (
                     <input
                       type="checkbox"
                       checked={selectedIds.has(k.id)}
                       onChange={() => toggleSelect(k.id)}
-                      aria-label={`Select ${k.label}`}
+                      aria-label={t('table.selectKey', { label: k.label })}
                       style={{ cursor: 'pointer' }}
                     />
                   )
                 },
                 {
                   id: 'label',
-                  header: 'Label',
+                  header: t('table.label'),
                   headerStyle: { width: '15%' },
-                  dataLabel: 'Label',
+                  dataLabel: t('table.label'),
                   cellClassName: 'mono',
                   cell: (k: TavilyKeyDto) => k.label
                 },
                 {
                   id: 'key',
-                  header: 'API Key',
+                  header: t('table.apiKey'),
                   headerStyle: { width: '25%' },
-                  dataLabel: 'API Key',
+                  dataLabel: t('table.apiKey'),
                   cell: (k: TavilyKeyDto) => (
                     <KeyRevealCell
                       keyId={k.id}
@@ -493,9 +496,9 @@ export function KeysPage({ api }: { api: AdminApi }) {
                 },
                 {
                   id: 'credits',
-                  header: 'Credits',
+                  header: t('table.credits'),
                   headerStyle: { width: '20%' },
-                  dataLabel: 'Credits',
+                  dataLabel: t('table.credits'),
                   cell: (k: TavilyKeyDto) => (
                     <KeyCreditsCell
                       keyId={k.id}
@@ -509,9 +512,9 @@ export function KeysPage({ api }: { api: AdminApi }) {
                 },
                 {
                   id: 'status',
-                  header: 'Status',
+                  header: t('table.status'),
                   headerStyle: { width: '12%' },
-                  dataLabel: 'Status',
+                  dataLabel: t('table.status'),
                   cell: (k: TavilyKeyDto) => (
                     <StatusMenu
                       status={k.status}
@@ -521,17 +524,17 @@ export function KeysPage({ api }: { api: AdminApi }) {
                 },
                 {
                   id: 'lastUsed',
-                  header: 'Last used',
+                  header: t('table.lastUsed'),
                   headerStyle: { width: '14%' },
-                  dataLabel: 'Last used',
+                  dataLabel: t('table.lastUsed'),
                   cellClassName: 'mono',
                   cell: (k: TavilyKeyDto) => formatDateTime(k.lastUsedAt)
                 },
                 {
                   id: 'created',
-                  header: 'Created',
+                  header: t('table.created'),
                   headerStyle: { width: '14%' },
-                  dataLabel: 'Created',
+                  dataLabel: t('table.created'),
                   cellClassName: 'mono',
                   cell: (k: TavilyKeyDto) => formatDateTime(k.createdAt)
                 },
@@ -540,14 +543,14 @@ export function KeysPage({ api }: { api: AdminApi }) {
                   header: '',
                   headerStyle: { width: '10%', textAlign: 'right' },
                   headerAlign: 'right',
-                  dataLabel: 'Actions',
+                  dataLabel: t('table.actions'),
                   cellAlign: 'right',
                   cell: (k: TavilyKeyDto) => (
                     <IconButton
                       icon={<IconTrash />}
                       variant="ghost-danger"
                       onClick={() => setKeyToDelete(k)}
-                      title="Delete key"
+                      title={t('button.deleteKey')}
                     />
                   )
                 }
@@ -559,11 +562,11 @@ export function KeysPage({ api }: { api: AdminApi }) {
             empty={
               <EmptyState
                 icon={<IconKey />}
-                message={hasFilters ? 'No keys match your filters.' : 'No keys found. Add a key to start rotating.'}
+                message={hasFilters ? t('empty.noMatch') : t('empty.noKeys')}
                 action={
                   hasFilters
-                    ? { label: 'Clear filters', onClick: clearFilters, variant: 'ghost' }
-                    : { label: 'Add key', onClick: () => setCreateOpen(true) }
+                    ? { label: t('search.clearFilters'), onClick: clearFilters, variant: 'ghost' }
+                    : { label: t('actions.addKey'), onClick: () => setCreateOpen(true) }
                 }
               />
             }
@@ -572,12 +575,12 @@ export function KeysPage({ api }: { api: AdminApi }) {
         </div>
       </div>
 
-      <Dialog title="Add Tavily key" open={createOpen} onClose={() => (creating ? null : setCreateOpen(false))}>
+      <Dialog title={t('dialog.addTitle')} open={createOpen} onClose={() => (creating ? null : setCreateOpen(false))}>
         <div className="stack">
           <div className="grid2">
             <div className="stack">
               <label className="label" htmlFor="key-label">
-                Label <span style={{ color: 'var(--danger)' }}>*</span>
+                {t('form.label')} <span style={{ color: 'var(--danger)' }}>{t('form.required')}</span>
               </label>
               <input
                 id="key-label"
@@ -586,7 +589,7 @@ export function KeysPage({ api }: { api: AdminApi }) {
                 value={newLabel}
                 onChange={(e) => setNewLabel(e.target.value)}
                 onBlur={() => setTouched((prev) => ({ ...prev, label: true }))}
-                placeholder="e.g. prod-key-01"
+                placeholder={t('form.labelPlaceholder')}
                 autoComplete="off"
                 aria-invalid={!!(formErrors.label && touched.label)}
                 aria-describedby={formErrors.label && touched.label ? 'label-error' : 'label-help'}
@@ -597,13 +600,13 @@ export function KeysPage({ api }: { api: AdminApi }) {
                 </div>
               ) : (
                 <div id="label-help" className="help">
-                  Must be unique.
+                  {t('form.labelHelp')}
                 </div>
               )}
             </div>
             <div className="stack">
               <label className="label" htmlFor="api-key">
-                API key <span style={{ color: 'var(--danger)' }}>*</span>
+                {t('form.apiKey')} <span style={{ color: 'var(--danger)' }}>{t('form.required')}</span>
               </label>
               <input
                 id="api-key"
@@ -612,7 +615,7 @@ export function KeysPage({ api }: { api: AdminApi }) {
                 value={newApiKey}
                 onChange={(e) => setNewApiKey(e.target.value)}
                 onBlur={() => setTouched((prev) => ({ ...prev, apiKey: true }))}
-                placeholder="tvly-..."
+                placeholder={t('form.apiKeyPlaceholder')}
                 autoComplete="off"
                 aria-invalid={!!(formErrors.apiKey && touched.apiKey)}
                 aria-describedby={formErrors.apiKey && touched.apiKey ? 'apikey-error' : 'apikey-help'}
@@ -623,7 +626,7 @@ export function KeysPage({ api }: { api: AdminApi }) {
                 </div>
               ) : (
                 <div id="apikey-help" className="help">
-                  Stored encrypted server-side.
+                  {t('form.apiKeyHelp')}
                 </div>
               )}
             </div>
@@ -631,11 +634,11 @@ export function KeysPage({ api }: { api: AdminApi }) {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
             <button className="btn" onClick={() => setCreateOpen(false)} disabled={creating}>
-              Cancel
+              {tc('actions.cancel')}
             </button>
             <button className="btn" data-variant="primary" onClick={onCreate} disabled={creating || !isFormValid}>
               <IconKey />
-              {creating ? 'Adding...' : 'Add key'}
+              {creating ? t('button.adding') : t('actions.addKey')}
             </button>
           </div>
         </div>
@@ -643,12 +646,12 @@ export function KeysPage({ api }: { api: AdminApi }) {
 
       <ConfirmDialog
         open={!!keyToDelete}
-        title="Delete key"
-        description={`Delete "${keyToDelete?.label ?? ''}" permanently.`}
-        confirmLabel="Delete"
+        title={t('dialog.deleteTitle')}
+        description={t('dialog.deleteDescription', { label: keyToDelete?.label ?? '' })}
+        confirmLabel={tc('actions.delete')}
         confirmVariant="danger"
         requireText="DELETE"
-        requireTextLabel="Type DELETE to permanently delete this key"
+        requireTextLabel={t('dialog.requireDeleteText')}
         confirming={deleting}
         onClose={() => (deleting ? null : setKeyToDelete(null))}
         onConfirm={onDeleteKey}
@@ -656,12 +659,12 @@ export function KeysPage({ api }: { api: AdminApi }) {
 
       <ConfirmDialog
         open={bulkDeleteIds !== null}
-        title="Delete selected keys"
-        description={`Delete ${bulkDeleteIds?.length ?? 0} selected key${(bulkDeleteIds?.length ?? 0) === 1 ? '' : 's'} permanently.`}
-        confirmLabel="Delete selected"
+        title={t('dialog.deleteSelectedTitle')}
+        description={t('dialog.deleteSelectedDescription', { count: bulkDeleteIds?.length ?? 0 })}
+        confirmLabel={tc('actions.delete')}
         confirmVariant="danger"
         requireText="DELETE"
-        requireTextLabel="Type DELETE to permanently delete the selected keys"
+        requireTextLabel={t('dialog.requireDeleteSelectedText')}
         confirming={bulkDeleting}
         onClose={() => (bulkDeleting ? null : setBulkDeleteIds(null))}
         onConfirm={onBulkDelete}

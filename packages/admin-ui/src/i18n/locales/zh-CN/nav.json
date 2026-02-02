@@ -1,0 +1,31 @@
+{
+  "brand": "Tavily Bridge",
+  "subtitle": "管理控制台",
+  "pages": {
+    "overview": "概览",
+    "keys": "密钥",
+    "tokens": "令牌",
+    "usage": "使用情况",
+    "settings": "设置"
+  },
+  "pageSubtitles": {
+    "overview": "系统状态",
+    "keys": "管理 API 密钥池",
+    "tokens": "管理访问令牌",
+    "usage": "Tavily 的使用情况",
+    "settings": "偏好设置和配置"
+  },
+  "theme": {
+    "toggle": "主题",
+    "light": "浅色模式",
+    "dark": "深色模式",
+    "switchTo": "切换到{{mode}}"
+  },
+  "sidebar": {
+    "expand": "展开",
+    "collapse": "收起",
+    "expandSidebar": "展开侧边栏",
+    "collapseSidebar": "收起侧边栏"
+  },
+  "connection": "连接"
+}

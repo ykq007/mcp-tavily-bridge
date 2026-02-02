@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog } from './Dialog';
 
 export function ConfirmDialog({
@@ -7,7 +8,7 @@ export function ConfirmDialog({
   description,
   confirmLabel,
   confirmVariant = 'danger',
-  cancelLabel = 'Cancel',
+  cancelLabel,
   requireText,
   requireTextLabel,
   onClose,
@@ -26,6 +27,7 @@ export function ConfirmDialog({
   onConfirm: () => void;
   confirming?: boolean;
 }) {
+  const { t } = useTranslation('common');
   const [value, setValue] = useState('');
 
   useEffect(() => {
@@ -45,25 +47,25 @@ export function ConfirmDialog({
         {needsText ? (
           <div className="stack">
             <label className="label" htmlFor="confirm-input">
-              {requireTextLabel || 'Type to confirm'}
+              {requireTextLabel || t('confirm.typeToConfirm')}
             </label>
             <input
               id="confirm-input"
               className="input mono"
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder={`Type ${requireText} to confirm`}
+              placeholder={t('confirm.typePlaceholder', { text: requireText })}
               autoComplete="off"
             />
             <div className="help">
-              This action cannot be undone.
+              {t('confirm.cannotUndo')}
             </div>
           </div>
         ) : null}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
           <button className="btn" onClick={onClose} disabled={confirming}>
-            {cancelLabel}
+            {cancelLabel ?? t('actions.cancel')}
           </button>
           <button className="btn" data-variant={confirmVariant} onClick={onConfirm} disabled={!canConfirm}>
             {confirming ? `${confirmLabel}…` : confirmLabel}

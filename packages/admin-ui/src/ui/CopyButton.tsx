@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { IconCheck, IconCopy } from './icons';
 import { useToast } from './toast';
 
@@ -19,8 +20,11 @@ export function CopyButton({
   disabled?: boolean;
   onCopied?: () => void;
 }) {
+  const { t } = useTranslation('common');
   const toast = useToast();
   const [copied, setCopied] = React.useState(false);
+
+  const defaultLabel = t('copy.copied');
 
   const copy = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -28,11 +32,11 @@ export function CopyButton({
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      toast.push({ title: label || 'Copied to clipboard', variant: 'success' });
+      toast.push({ title: label || defaultLabel, variant: 'success' });
       onCopied?.();
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.push({ title: 'Copy failed', message: 'Clipboard permission denied', variant: 'error' });
+      toast.push({ title: t('copy.failed'), message: t('copy.permissionDenied'), variant: 'error' });
     }
   };
 
@@ -42,8 +46,8 @@ export function CopyButton({
       data-variant={variant}
       onClick={copy}
       disabled={disabled}
-      aria-label={label || 'Copy to clipboard'}
-      title={label || 'Copy to clipboard'}
+      aria-label={label || defaultLabel}
+      title={label || defaultLabel}
     >
       {copied ? <IconCheck /> : <IconCopy />}
       {typeof buttonText === 'string' && buttonText.trim() ? <span>{buttonText}</span> : null}

@@ -1,5 +1,6 @@
 import { readJson, writeJson } from '../lib/storage';
 import { loadAdminToken, persistAdminToken } from './adminAuth';
+import type { SupportedLocale } from '../i18n';
 
 export type Theme = 'light' | 'dark';
 
@@ -8,6 +9,7 @@ export type AdminUiPrefs = {
   theme: Theme;
   rememberAdminToken: boolean;
   sidebarCollapsed: boolean;
+  locale: SupportedLocale;
 };
 
 const STORAGE_KEY_V1 = 'mcp-tavily-bridge.adminUiPrefs.v1';
@@ -49,12 +51,19 @@ export function loadPrefs(defaults: Partial<AdminUiPrefs> = {}): AdminUiPrefs {
         ? defaults.sidebarCollapsed
         : false;
 
+  const locale: SupportedLocale =
+    savedV2?.locale === 'en' || savedV2?.locale === 'zh-CN'
+      ? savedV2.locale
+      : defaults.locale === 'en' || defaults.locale === 'zh-CN'
+        ? defaults.locale
+        : inferLocale();
+
   const legacyAdminToken = typeof savedV1?.adminToken === 'string' ? savedV1.adminToken : '';
   if (legacyAdminToken.trim() && !loadAdminToken().trim()) {
     persistAdminToken(legacyAdminToken, true);
   }
 
-  return { apiBaseUrl, theme, rememberAdminToken, sidebarCollapsed };
+  return { apiBaseUrl, theme, rememberAdminToken, sidebarCollapsed, locale };
 }
 
 export function savePrefs(next: AdminUiPrefs): void {
@@ -64,4 +73,14 @@ export function savePrefs(next: AdminUiPrefs): void {
 function inferTheme(): Theme {
   if (typeof window === 'undefined') return 'light';
   return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function inferLocale(): SupportedLocale {
+  if (typeof window === 'undefined') return 'en';
+  const stored = localStorage.getItem('mcp-tavily-bridge.locale');
+  if (stored === 'zh-CN') return 'zh-CN';
+  if (stored === 'en') return 'en';
+  const browserLang = navigator.language || (navigator as any).userLanguage || '';
+  if (browserLang.startsWith('zh')) return 'zh-CN';
+  return 'en';
 }

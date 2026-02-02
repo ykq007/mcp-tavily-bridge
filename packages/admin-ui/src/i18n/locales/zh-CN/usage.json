@@ -1,0 +1,44 @@
+{
+  "title": "使用情况",
+  "subtitle": "Tavily 的使用情况（查询根据服务器日志模式进行脱敏）",
+  "actions": {
+    "refresh": "刷新"
+  },
+  "filters": {
+    "tool": "工具",
+    "allTools": "所有工具",
+    "outcome": "结果",
+    "allOutcomes": "所有结果",
+    "success": "成功",
+    "error": "错误",
+    "clientTokenPrefix": "客户端令牌前缀",
+    "clientPlaceholder": "mcp_abcd1234...",
+    "from": "开始日期",
+    "to": "结束日期"
+  },
+  "summary": {
+    "totalEvents": "总事件数："
+  },
+  "table": {
+    "time": "时间",
+    "tool": "工具",
+    "outcome": "结果",
+    "client": "客户端",
+    "query": "查询",
+    "latency": "延迟"
+  },
+  "empty": {
+    "noEvents": "暂无使用事件。"
+  },
+  "dialog": {
+    "title": "使用事件",
+    "time": "时间",
+    "client": "客户端",
+    "upstreamKey": "上游密钥",
+    "latency": "延迟",
+    "query": "查询（已脱敏）",
+    "queryHash": "哈希：{{hash}}",
+    "error": "错误",
+    "args": "参数（已脱敏）"
+  }
+}

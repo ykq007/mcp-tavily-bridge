@@ -1,0 +1,68 @@
+{
+  "title": "设置",
+  "subtitle": "管理员请求的发送位置和认证方式",
+  "actions": {
+    "testConnection": "测试连接"
+  },
+  "apiBaseUrl": {
+    "label": "管理员 API 基础 URL",
+    "placeholder": "（空 = 同源）",
+    "help": "在生产环境中，当从桥接服务器提供服务时，请将此留空。在开发环境中，设置为例如 <mono>http://127.0.0.1:8787</mono>。",
+    "schemeTip": "提示：请包含 http:// 或 https://（例如 http://127.0.0.1:8787）"
+  },
+  "auth": {
+    "label": "认证",
+    "status": "状态：",
+    "signedIn": "已登录",
+    "signedOut": "未登录",
+    "changeToken": "更换令牌",
+    "help": "登录（或更换令牌）使用服务器 ADMIN_API_TOKEN。客户端令牌用于 MCP 客户端，在令牌页面管理。"
+  },
+  "theme": {
+    "label": "主题",
+    "light": "浅色",
+    "dark": "深色",
+    "help": "默认跟随系统。"
+  },
+  "language": {
+    "label": "语言",
+    "help": "选择您偏好的语言。"
+  },
+  "notes": {
+    "label": "备注",
+    "help": "管理员 UI 无法设置服务器环境变量。您输入的令牌必须与服务器启动时使用的令牌匹配。"
+  },
+  "server": {
+    "label": "服务器",
+    "signInRequired": "登录以查看服务器端设置。",
+    "loadError": "无法加载服务器信息",
+    "keySelection": "上游密钥选择",
+    "roundRobin": "轮询",
+    "random": "随机",
+    "keySelectionHelp": "在服务器上持久化。未设置时，回退到 <mono>TAVILY_KEY_SELECTION_STRATEGY</mono>（<mono>round_robin</mono> 或 <mono>random</mono>）。"
+  },
+  "rotation": {
+    "label": "轮换行为",
+    "help": "密钥选择在每次上游请求尝试时评估，并在遇到无效/受限密钥时故障转移到另一个密钥。"
+  },
+  "pill": {
+    "envVars": "服务器必须使用 <mono>ADMIN_API_TOKEN</mono> 和 <mono>KEY_ENCRYPTION_SECRET</mono> 启动。"
+  },
+  "toast": {
+    "signInRequired": "需要登录",
+    "signInRequiredMessage": "使用管理员令牌登录以更新服务器设置。",
+    "updated": "已更新",
+    "updatedMessage": "上游密钥选择已设置为 {{strategy}}。",
+    "updateFailed": "更新失败",
+    "connected": "已连接",
+    "connectedMessage": "管理员 API 认证成功。",
+    "authFailed": "认证失败 (401)",
+    "authFailedMessage": "管理员令牌无效。它必须与桥接服务器环境变量 ADMIN_API_TOKEN 匹配。",
+    "notFound": "未找到 (404)",
+    "notFoundMessage": "请检查管理员 API 基础 URL，并确保桥接服务器暴露了 /admin/api/* 路由。",
+    "networkError": "网络/CORS 错误",
+    "networkErrorMessage": "无法访问管理员 API。在本地开发时，请在 http://127.0.0.1:8787 启动桥接服务器并依赖 Vite /admin/api 代理（将基础 URL 留空），或明确设置基础 URL。",
+    "connectionFailed": "连接失败",
+    "goToLoginMessage": "请先前往登录页面并输入服务器 ADMIN_API_TOKEN。"
+  }
+}

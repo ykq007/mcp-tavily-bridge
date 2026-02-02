@@ -1,0 +1,51 @@
+{
+  "actions": {
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "refresh": "刷新",
+    "retry": "重试",
+    "copy": "复制",
+    "close": "关闭",
+    "confirm": "确认",
+    "signIn": "登录",
+    "signOut": "退出登录",
+    "settings": "设置"
+  },
+  "status": {
+    "loading": "加载中...",
+    "saving": "保存中...",
+    "deleting": "删除中...",
+    "checking": "检查中..."
+  },
+  "pagination": {
+    "showing": "显示第 <strong>{{start}}</strong> 至 <strong>{{end}}</strong> 条，共 <strong>{{total}}</strong> 条",
+    "prev": "上一页",
+    "next": "下一页"
+  },
+  "errors": {
+    "loadingData": "加载数据出错",
+    "unknownError": "未知错误"
+  },
+  "confirm": {
+    "typeToConfirm": "输入以确认",
+    "typePlaceholder": "输入 {{text}} 以确认",
+    "cannotUndo": "此操作无法撤销。"
+  },
+  "copy": {
+    "copied": "已复制到剪贴板",
+    "failed": "复制失败",
+    "permissionDenied": "剪贴板权限被拒绝"
+  },
+  "time": {
+    "noExpiry": "永不过期",
+    "seconds": "{{count}}秒",
+    "minutes": "{{count}}分钟",
+    "hours": "{{count}}小时",
+    "days": "{{count}}天"
+  },
+  "auth": {
+    "signedOut": "已退出登录",
+    "authFailedMessage": "认证失败。请使用管理员令牌重新登录。"
+  }
+}

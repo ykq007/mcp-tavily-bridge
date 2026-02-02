@@ -1,0 +1,44 @@
+{
+  "title": "Usage",
+  "subtitle": "What Tavily is used for (queries are redacted based on server log mode)",
+  "actions": {
+    "refresh": "Refresh"
+  },
+  "filters": {
+    "tool": "Tool",
+    "allTools": "All tools",
+    "outcome": "Outcome",
+    "allOutcomes": "All outcomes",
+    "success": "success",
+    "error": "error",
+    "clientTokenPrefix": "Client token prefix",
+    "clientPlaceholder": "mcp_abcd1234...",
+    "from": "From",
+    "to": "To"
+  },
+  "summary": {
+    "totalEvents": "Total events:"
+  },
+  "table": {
+    "time": "Time",
+    "tool": "Tool",
+    "outcome": "Outcome",
+    "client": "Client",
+    "query": "Query",
+    "latency": "Latency"
+  },
+  "empty": {
+    "noEvents": "No usage events yet."
+  },
+  "dialog": {
+    "title": "Usage event",
+    "time": "Time",
+    "client": "Client",
+    "upstreamKey": "Upstream key",
+    "latency": "Latency",
+    "query": "Query (redacted)",
+    "queryHash": "hash: {{hash}}",
+    "error": "Error",
+    "args": "Args (redacted)"
+  }
+}

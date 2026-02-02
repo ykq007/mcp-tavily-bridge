@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AdminApi, ClientTokenDto, TavilyKeyDto, TavilyToolUsageDto } from '../lib/adminApi';
 import { formatDateTime } from '../lib/format';
 import { IconKey, IconRefresh, IconSearch, IconToken } from '../ui/icons';
@@ -24,6 +25,8 @@ export function OverviewPage({
   onGoToTokens: () => void;
   onGoToUsage: () => void;
 }) {
+  const { t } = useTranslation('overview');
+  const { t: tc } = useTranslation('common');
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,12 +42,12 @@ export function OverviewPage({
       ]);
       setData({ keys, tokens, usage: usageResponse.logs });
     } catch (e: any) {
-      setError(typeof e?.message === 'string' ? e.message : 'Failed to load overview');
+      setError(typeof e?.message === 'string' ? e.message : tc('errors.unknownError'));
       setData(null);
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, tc]);
 
   useEffect(() => {
     void load();
@@ -76,12 +79,12 @@ export function OverviewPage({
         <div className="cardHeader">
           <div className="row">
             <div>
-              <div className="h2">Overview</div>
-              <div className="help">Keys, client tokens, and recent Tavily usage</div>
+              <div className="h2">{t('title')}</div>
+              <div className="help">{t('subtitle')}</div>
             </div>
             <button className="btn" onClick={load} disabled={loading}>
               <IconRefresh className={loading ? 'spin' : ''} />
-              Refresh
+              {t('actions.refresh')}
             </button>
           </div>
         </div>
@@ -100,25 +103,25 @@ export function OverviewPage({
             ) : (
               <>
                 <KpiCard
-                  label="Tavily keys"
+                  label={t('kpi.tavilyKeys')}
                   value={kpis.totalKeys}
-                  hint={`${kpis.activeKeys} active • ${kpis.unhealthyKeys} cooldown/invalid`}
+                  hint={t('kpi.keysHint', { active: kpis.activeKeys, unhealthy: kpis.unhealthyKeys })}
                   icon={<IconKey />}
                   variant="keys"
                   onClick={onGoToKeys}
                 />
                 <KpiCard
-                  label="Client tokens"
+                  label={t('kpi.clientTokens')}
                   value={kpis.totalTokens}
-                  hint={`${kpis.activeTokens} active • ${kpis.revokedTokens} revoked`}
+                  hint={t('kpi.tokensHint', { active: kpis.activeTokens, revoked: kpis.revokedTokens })}
                   icon={<IconToken />}
                   variant="tokens"
                   onClick={onGoToTokens}
                 />
                 <KpiCard
-                  label="Usage"
+                  label={t('kpi.usage')}
                   value={data?.usage?.length ?? 0}
-                  hint="Last 10 events"
+                  hint={t('kpi.usageHint')}
                   icon={<IconSearch />}
                   variant="usage"
                   onClick={onGoToUsage}
@@ -134,11 +137,11 @@ export function OverviewPage({
           <div className="cardHeader">
             <div className="row">
               <div>
-                <div className="h2">Recent usage</div>
-                <div className="help">Newest first</div>
+                <div className="h2">{t('recentUsage.title')}</div>
+                <div className="help">{t('recentUsage.subtitle')}</div>
               </div>
               <button className="btn" data-variant="ghost" onClick={onGoToUsage}>
-                View all
+                {t('actions.viewAll')}
               </button>
             </div>
           </div>
@@ -151,36 +154,36 @@ export function OverviewPage({
               </div>
             ) : (
             <DataTable
-              ariaLabel="Recent Tavily usage"
+              ariaLabel={t('recentUsage.title')}
               columns={(
                 [
                   {
                     id: 'time',
-                    header: 'Time',
+                    header: t('table.time'),
                     headerStyle: { width: 170 },
-                    dataLabel: 'Time',
+                    dataLabel: t('table.time'),
                     cellClassName: 'mono',
                     cell: (row: TavilyToolUsageDto) => formatDateTime(row.timestamp)
                   },
                   {
                     id: 'tool',
-                    header: 'Tool',
+                    header: t('table.tool'),
                     headerStyle: { width: 140 },
-                    dataLabel: 'Tool',
+                    dataLabel: t('table.tool'),
                     cellClassName: 'mono',
                     cell: (row: TavilyToolUsageDto) => row.toolName
                   },
                   {
                     id: 'outcome',
-                    header: 'Outcome',
+                    header: t('table.outcome'),
                     headerStyle: { width: 120 },
-                    dataLabel: 'Outcome',
+                    dataLabel: t('table.outcome'),
                     cell: (row: TavilyToolUsageDto) => <OutcomeBadge outcome={row.outcome} />
                   },
                   {
                     id: 'query',
-                    header: 'Query',
-                    dataLabel: 'Query',
+                    header: t('table.query'),
+                    dataLabel: t('table.query'),
                     cellClassName: 'mono',
                     cell: (row: TavilyToolUsageDto) => row.queryPreview ?? (row.queryHash ? `${row.queryHash.slice(0, 10)}…` : '—')
                   }
@@ -189,7 +192,7 @@ export function OverviewPage({
               rows={data?.usage ?? []}
               rowKey={(row) => row.id}
               loading={loading && !data}
-              empty={<EmptyState message="No usage yet." compact />}
+              empty={<EmptyState message={t('empty.noUsage')} compact />}
             />
             )}
           </div>

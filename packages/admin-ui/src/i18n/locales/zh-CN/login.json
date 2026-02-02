@@ -1,0 +1,25 @@
+{
+  "title": "登录",
+  "subtitle": "使用服务器 ADMIN_API_TOKEN 访问管理控制台",
+  "form": {
+    "tokenLabel": "管理员 API 令牌",
+    "tokenPlaceholder": "ADMIN_API_TOKEN",
+    "tokenHelp": "粘贴服务器启动时使用的管理员令牌。这不是客户端令牌。",
+    "remember": "在此设备上记住（将令牌存储在 localStorage 中）"
+  },
+  "pill": {
+    "info": "登录后的会话可以管理密钥/令牌。客户端令牌用于 MCP 客户端，不应用于登录管理控制台。"
+  },
+  "toast": {
+    "tokenRequired": "需要管理员令牌",
+    "tokenRequiredMessage": "请粘贴服务器 ADMIN_API_TOKEN 以登录。",
+    "signedIn": "已登录",
+    "authFailed": "认证失败 (401)",
+    "authFailedMessage": "管理员令牌无效。它必须与桥接服务器环境变量 ADMIN_API_TOKEN 匹配。",
+    "notFound": "未找到 (404)",
+    "notFoundMessage": "请检查管理员 API 基础 URL，并确保桥接服务器暴露了 /admin/api/* 路由。",
+    "networkError": "网络/CORS 错误",
+    "networkErrorMessage": "无法访问管理员 API。在本地开发时，请在 http://127.0.0.1:8787 启动桥接服务器并依赖 Vite /admin 代理（将基础 URL 留空），或明确设置基础 URL。",
+    "signInFailed": "登录失败"
+  }
+}

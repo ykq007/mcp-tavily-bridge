@@ -1,0 +1,120 @@
+{
+  "title": "Tavily keys",
+  "stats": {
+    "total": "{{count}} total",
+    "active": "{{count}} active",
+    "cooldown": "{{count}} cooldown",
+    "invalid": "{{count}} invalid",
+    "disabled": "{{count}} disabled",
+    "summary": "{{total}} total \u2022 {{active}} active \u2022 {{cooldown}} cooldown \u2022 {{invalid}} invalid \u2022 {{disabled}} disabled"
+  },
+  "kpi": {
+    "totalCapacity": "Total Capacity",
+    "activeKeys": "Active Keys",
+    "systemHealth": "System Health"
+  },
+  "actions": {
+    "addKey": "Add key",
+    "refresh": "Refresh",
+    "checkCredits": "Check Credits",
+    "checkingCredits": "Checking..."
+  },
+  "search": {
+    "placeholder": "Search keys by label...",
+    "showing": "Showing {{filtered}} of {{total}} keys",
+    "clearFilters": "Clear filters"
+  },
+  "filter": {
+    "allStatuses": "All statuses",
+    "active": "Active",
+    "disabled": "Disabled",
+    "cooldown": "Cooldown",
+    "invalid": "Invalid"
+  },
+  "sort": {
+    "newestFirst": "Newest first",
+    "oldestFirst": "Oldest first",
+    "labelAZ": "Label A-Z",
+    "labelZA": "Label Z-A",
+    "recentlyUsed": "Recently used",
+    "statusAZ": "Status A-Z"
+  },
+  "bulk": {
+    "selected": "<strong>{{count}}</strong> {{count, plural, one {key} other {keys}}} selected",
+    "selectedCount_one": "{{count}} key selected",
+    "selectedCount_other": "{{count}} keys selected",
+    "refreshCredits": "Refresh Credits",
+    "deleteSelected": "Delete Selected",
+    "clearSelection": "Clear Selection"
+  },
+  "table": {
+    "label": "Label",
+    "apiKey": "API Key",
+    "credits": "Credits",
+    "status": "Status",
+    "lastUsed": "Last used",
+    "created": "Created",
+    "actions": "Actions",
+    "select": "Select",
+    "selectAll": "Select all keys",
+    "selectKey": "Select {{label}}"
+  },
+  "empty": {
+    "noKeys": "No keys found. Add a key to start rotating.",
+    "noMatch": "No keys match your filters."
+  },
+  "dialog": {
+    "addTitle": "Add Tavily key",
+    "deleteTitle": "Delete key",
+    "deleteSelectedTitle": "Delete selected keys",
+    "deleteDescription": "Delete \"{{label}}\" permanently.",
+    "deleteSelectedDescription": "Delete {{count}} selected {{count, plural, one {key} other {keys}}} permanently.",
+    "deleteSelectedDescription_one": "Delete {{count}} selected key permanently.",
+    "deleteSelectedDescription_other": "Delete {{count}} selected keys permanently.",
+    "requireDeleteText": "Type DELETE to permanently delete this key",
+    "requireDeleteSelectedText": "Type DELETE to permanently delete the selected keys"
+  },
+  "form": {
+    "label": "Label",
+    "labelRequired": "Label is required",
+    "labelMinLength": "Label must be at least 2 characters",
+    "labelHelp": "Must be unique.",
+    "labelPlaceholder": "e.g. prod-key-01",
+    "apiKey": "API key",
+    "apiKeyRequired": "API key is required",
+    "apiKeyFormat": "API key should start with \"tvly-\"",
+    "apiKeyHelp": "Stored encrypted server-side.",
+    "apiKeyPlaceholder": "tvly-...",
+    "required": "*"
+  },
+  "toast": {
+    "added": "Key added",
+    "addedMessage": "Saved \"{{name}}\"",
+    "createFailed": "Create failed",
+    "updated": "Key updated",
+    "updatedMessage": "Status set to {{status}}",
+    "updateFailed": "Update failed",
+    "deleted": "Key deleted",
+    "deletedMessage": "Deleted \"{{name}}\"",
+    "deleteFailed": "Delete failed",
+    "checkingCredits": "Checking credits...",
+    "checkingCreditsMessage": "Updating credits for all keys",
+    "creditsUpdated": "Credits updated",
+    "creditsUpdatedMessage": "Checked {{total}} keys ({{success}} ok, {{failed}} failed)",
+    "syncFailed": "Sync failed",
+    "syncing": "Syncing...",
+    "syncingMessage": "Refreshing {{count}} keys",
+    "syncSuccess": "Success",
+    "syncSuccessMessage": "Refreshed {{count}} keys",
+    "bulkRefreshFailed": "Bulk refresh failed",
+    "bulkDeleting": "Deleting...",
+    "bulkDeletingMessage": "Removing {{count}} keys",
+    "bulkDeleted": "Deleted",
+    "bulkDeletedMessage": "Removed {{count}} keys",
+    "bulkDeleteFailed": "Bulk delete failed"
+  },
+  "button": {
+    "adding": "Adding...",
+    "deleteKey": "Delete key"
+  }
+}

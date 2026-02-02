@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { IconAlertCircle, IconRefresh } from './icons';
 
 interface ErrorBannerProps {
@@ -8,6 +9,7 @@ interface ErrorBannerProps {
 }
 
 export function ErrorBanner({ message, onRetry, retrying }: ErrorBannerProps) {
+  const { t } = useTranslation('common');
   return (
     <div role="alert" className="card errorBanner">
       <div className="flex items-center gap-3">
@@ -15,7 +17,7 @@ export function ErrorBanner({ message, onRetry, retrying }: ErrorBannerProps) {
           <IconAlertCircle />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="errorBannerTitle">Error loading data</div>
+          <div className="errorBannerTitle">{t('errors.loadingData')}</div>
           <div className="errorBannerMessage">{message}</div>
         </div>
         {onRetry && (
@@ -27,7 +29,7 @@ export function ErrorBanner({ message, onRetry, retrying }: ErrorBannerProps) {
             style={{ flexShrink: 0 }}
           >
             <IconRefresh className={retrying ? 'spin' : ''} />
-            Retry
+            {t('actions.retry')}
           </button>
         )}
       </div>
