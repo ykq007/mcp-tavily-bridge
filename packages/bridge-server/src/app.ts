@@ -10,7 +10,15 @@ import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import express from 'express';
 
 import { PrismaClient } from '@mcp-tavily-bridge/db';
-import { createTavilyProxyServer, getDefaultParametersFromEnv, parseDefaultParametersJson, parseTavilyKeySelectionStrategy } from '@mcp-tavily-bridge/core';
+import {
+  createBraveHttpClient,
+  createCombinedProxyServer,
+  getDefaultParametersFromEnv,
+  parseDefaultParametersJson,
+  parseTavilyKeySelectionStrategy,
+  QueuedRateGate,
+  type BraveOverflowMode
+} from '@mcp-tavily-bridge/core';
 
 import { requestContext } from './context.js';
 import { validateClientToken } from './auth/clientToken.js';
@@ -36,6 +44,13 @@ const GLOBAL_RATE_LIMIT_PER_MINUTE = Number(process.env.MCP_GLOBAL_RATE_LIMIT_PE
 const MAX_RETRIES = Number(process.env.MCP_MAX_RETRIES ?? '2');
 const FIXED_COOLDOWN_MS = Number(process.env.MCP_COOLDOWN_MS ?? String(60_000));
 const FALLBACK_TAVILY_KEY_SELECTION_STRATEGY = parseTavilyKeySelectionStrategy(process.env.TAVILY_KEY_SELECTION_STRATEGY);
+
+const BRAVE_API_KEY = process.env.BRAVE_API_KEY?.trim() || undefined;
+const BRAVE_HTTP_TIMEOUT_MS = Number(process.env.BRAVE_HTTP_TIMEOUT_MS ?? String(20_000));
+const BRAVE_MAX_QPS = Number(process.env.BRAVE_MAX_QPS ?? '1');
+const BRAVE_MIN_INTERVAL_MS = Number(process.env.BRAVE_MIN_INTERVAL_MS ?? '');
+const BRAVE_MAX_QUEUE_MS = Number(process.env.BRAVE_MAX_QUEUE_MS ?? String(30_000));
+const BRAVE_OVERFLOW = parseBraveOverflowMode(process.env.BRAVE_OVERFLOW);
 
 function asyncHandler(fn: (req: any, res: any, next: any) => Promise<void>) {
   return (req: any, res: any, next: any) => {
@@ -155,6 +170,14 @@ export function createBridgeApp(options: CreateBridgeAppOptions = {}): express.E
     fixedCooldownMs: FIXED_COOLDOWN_MS
   });
 
+  const braveHttpTimeoutMs = Number.isFinite(BRAVE_HTTP_TIMEOUT_MS) && BRAVE_HTTP_TIMEOUT_MS > 0 ? BRAVE_HTTP_TIMEOUT_MS : 20_000;
+  const braveMaxQueueMs = Number.isFinite(BRAVE_MAX_QUEUE_MS) && BRAVE_MAX_QUEUE_MS >= 0 ? BRAVE_MAX_QUEUE_MS : 30_000;
+  const braveMinIntervalMs = Number.isFinite(BRAVE_MIN_INTERVAL_MS) && BRAVE_MIN_INTERVAL_MS > 0 ? BRAVE_MIN_INTERVAL_MS : minIntervalMsFromQps(BRAVE_MAX_QPS);
+  const braveGate = new QueuedRateGate({ minIntervalMs: braveMinIntervalMs });
+  const braveClient = BRAVE_API_KEY
+    ? createBraveHttpClient({ apiKey: BRAVE_API_KEY, gate: braveGate, timeoutMs: braveHttpTimeoutMs })
+    : undefined;
+
   const perTokenLimiter = new FixedWindowRateLimiter({ maxPerWindow: RATE_LIMIT_PER_MINUTE, windowMs: 60_000 });
   const globalLimiter = new FixedWindowRateLimiter({ maxPerWindow: GLOBAL_RATE_LIMIT_PER_MINUTE, windowMs: 60_000 });
 
@@ -242,10 +265,13 @@ export function createBridgeApp(options: CreateBridgeAppOptions = {}): express.E
               transports,
               sessionIdGenerator: () => randomUUID()
             });
-            const server = createTavilyProxyServer({
+            const server = createCombinedProxyServer({
               serverName: 'tavily-mcp',
               serverVersion: '0.2.16',
               tavilyClient,
+              braveClient,
+              braveOverflow: BRAVE_OVERFLOW,
+              braveMaxQueueMs,
               getDefaultParameters: () => {
                 const envDefaults = getDefaultParametersFromEnv();
                 const headerDefaults = parseDefaultParametersJson(defaultParametersHeader);
@@ -314,6 +340,20 @@ export function createBridgeApp(options: CreateBridgeAppOptions = {}): express.E
   });
 
   return app;
+}
+
+function minIntervalMsFromQps(qps: number): number {
+  if (!Number.isFinite(qps) || qps <= 0) return 1000;
+  return Math.max(1, Math.ceil(1000 / qps));
+}
+
+function parseBraveOverflowMode(raw: unknown, fallback: BraveOverflowMode = 'fallback_to_tavily'): BraveOverflowMode {
+  if (typeof raw !== 'string') return fallback;
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === 'queue') return 'queue';
+  if (normalized === 'error') return 'error';
+  if (normalized === 'fallback_to_tavily' || normalized === 'fallback-to-tavily' || normalized === 'tavily') return 'fallback_to_tavily';
+  return fallback;
 }
 
 function isToolsCallRequest(body: any): boolean {

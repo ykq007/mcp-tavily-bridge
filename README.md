@@ -70,6 +70,26 @@ Set `TAVILY_BRIDGE_BASE_URL` to your deployment URL (for local Docker Compose: `
 }
 ```
 
+## Brave Search MCP compatibility
+
+This bridge also exposes Brave Search-compatible tools (in addition to the Tavily tool surface):
+
+- `brave_web_search`
+- `brave_local_search` (may fall back to web search depending on Brave plan support)
+
+### Brave configuration
+
+If `BRAVE_API_KEY` is set, Brave tools call the Brave Search API. If it is not set, Brave tools **fall back to Tavily** (results are formatted into a Brave-compatible JSON array).
+
+To mitigate Brave free-tier limits (1 request/second), Brave requests are queued and rate-gated across concurrent MCP sessions:
+
+- `BRAVE_API_KEY`: Brave Search API key (optional; enables upstream Brave calls)
+- `BRAVE_MAX_QPS`: max requests/second allowed to Brave (default: `1`)
+- `BRAVE_MIN_INTERVAL_MS`: overrides `BRAVE_MAX_QPS` with a fixed minimum interval between requests
+- `BRAVE_MAX_QUEUE_MS`: max time a Brave request may wait in the queue before error/fallback (default: `30000`)
+- `BRAVE_OVERFLOW`: `fallback_to_tavily` (default) | `queue` | `error`
+- `BRAVE_HTTP_TIMEOUT_MS`: per-request Brave HTTP timeout (default: `20000`)
+
 ## Tavily Usage Logging
 
 The bridge can record what Tavily is being used for (per-tool usage events) and expose it in the Admin UI under **Usage**.
