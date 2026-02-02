@@ -13,6 +13,8 @@ cp .env.example .env
 docker compose up --build
 ```
 
+SQLite 数据存储在挂载到容器 `/data` 的卷中。
+
 然后访问：
 - Admin UI：`http://localhost:8787/admin`
 - MCP endpoint：`http://localhost:8787/mcp`
@@ -31,7 +33,7 @@ docker compose up --build
 
 ### 本地快速开始（Node）
 
-需要一个可用的 Postgres，以及 `.env.example` 中的 env vars（至少：`DATABASE_URL`、`ADMIN_API_TOKEN`、`KEY_ENCRYPTION_SECRET`）。
+需要 `.env.example` 中的 env vars（至少：`DATABASE_URL`、`ADMIN_API_TOKEN`、`KEY_ENCRYPTION_SECRET`）。`DATABASE_URL` 使用 SQLite file URL（例如 `file:./tavily_bridge.db`）。
 
 ```bash
 npm install

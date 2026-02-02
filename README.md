@@ -13,6 +13,8 @@ cp .env.example .env
 docker compose up --build
 ```
 
+SQLite data is stored in the Docker volume mounted at `/data`.
+
 Then open:
 - Admin UI: `http://localhost:8787/admin`
 - MCP endpoint: `http://localhost:8787/mcp`
@@ -31,7 +33,7 @@ Then open:
 
 ### Local quickstart (Node)
 
-Requires a Postgres database and the env vars in `.env.example` (at minimum: `DATABASE_URL`, `ADMIN_API_TOKEN`, `KEY_ENCRYPTION_SECRET`).
+Requires the env vars in `.env.example` (at minimum: `DATABASE_URL`, `ADMIN_API_TOKEN`, `KEY_ENCRYPTION_SECRET`). `DATABASE_URL` should be a SQLite file URL (for example `file:./tavily_bridge.db`).
 
 ```bash
 npm install
