@@ -245,7 +245,7 @@ export function UsagePage({ api }: { api: AdminApi }) {
 
         {pagination.totalPages > 1 ? (
           <div className="cardBody">
-            <Pagination currentPage={pagination.currentPage} totalPages={pagination.totalPages} onPageChange={setCurrentPage} />
+            <Pagination total={pagination.totalItems} page={pagination.currentPage} pageSize={PAGE_SIZE} onChange={setCurrentPage} />
           </div>
         ) : null}
       </div>
