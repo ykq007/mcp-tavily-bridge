@@ -121,6 +121,20 @@ adminRouter.delete('/keys/:id', async (c) => {
   return c.json({ success: true });
 });
 
+// Key reveal is not supported in worker (keys are encrypted, no decryption exposed)
+adminRouter.get('/keys/:id/reveal', async (c) => {
+  return c.json({ error: 'Key reveal not supported in Cloudflare Workers deployment' }, 501);
+});
+
+// Credit refresh stubs (not implemented in worker)
+adminRouter.post('/keys/:id/refresh-credits', async (c) => {
+  return c.json({ success: true, message: 'Credit refresh not implemented in worker' });
+});
+
+adminRouter.post('/keys/sync-credits', async (c) => {
+  return c.json({ success: true, message: 'Credit sync not implemented in worker' });
+});
+
 // ============ Tavily Keys ============
 
 adminRouter.get('/tavily-keys', async (c) => {
@@ -253,6 +267,19 @@ adminRouter.delete('/brave-keys/:id', async (c) => {
   return c.json({ success: true });
 });
 
+adminRouter.patch('/brave-keys/:id', async (c) => {
+  const id = c.req.param('id');
+  const body = await c.req.json<{ status?: string }>();
+  const db = new D1Client(c.env.DB);
+
+  await db.updateBraveKey(id, { status: body.status });
+  return c.json({ id, status: body.status });
+});
+
+adminRouter.get('/brave-keys/:id/reveal', async (c) => {
+  return c.json({ error: 'Key reveal not supported in Cloudflare Workers deployment' }, 501);
+});
+
 // ============ Client Tokens ============
 
 adminRouter.get('/tokens', async (c) => {
@@ -313,6 +340,14 @@ adminRouter.delete('/tokens/:id', async (c) => {
   return c.json({ success: true });
 });
 
+adminRouter.post('/tokens/:id/revoke', async (c) => {
+  const id = c.req.param('id');
+  const db = new D1Client(c.env.DB);
+
+  await db.revokeClientToken(id);
+  return c.json({ success: true });
+});
+
 // ============ Settings ============
 
 adminRouter.get('/settings', async (c) => {
@@ -370,6 +405,35 @@ adminRouter.get('/usage', async (c) => {
   results.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   return c.json(results.slice(0, limit));
+});
+
+adminRouter.get('/usage/summary', async (c) => {
+  const db = new D1Client(c.env.DB);
+
+  // Get all logs and compute summary
+  const tavilyLogs = await db.getTavilyUsageLogs(1000, 0);
+  const braveLogs = await db.getBraveUsageLogs(1000, 0);
+
+  const allLogs = [...tavilyLogs, ...braveLogs];
+
+  // Compute summary stats
+  const totalRequests = allLogs.length;
+  const successCount = allLogs.filter(l => l.outcome === 'success').length;
+  const errorCount = allLogs.filter(l => l.outcome === 'error').length;
+
+  // Tool breakdown
+  const toolCounts: Record<string, number> = {};
+  for (const log of allLogs) {
+    toolCounts[log.toolName] = (toolCounts[log.toolName] || 0) + 1;
+  }
+
+  return c.json({
+    totalRequests,
+    successCount,
+    errorCount,
+    successRate: totalRequests > 0 ? (successCount / totalRequests * 100).toFixed(1) : '0',
+    toolBreakdown: toolCounts,
+  });
 });
 
 export { adminRouter };
