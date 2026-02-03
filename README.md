@@ -111,3 +111,14 @@ When multiple upstream Tavily API keys are available, the bridge can pick a key 
 - `TAVILY_KEY_SELECTION_STRATEGY`: `round_robin` (default) or `random`
 
 You can also override this at runtime from the Admin UI (**Settings → Server**) which persists on the server and takes effect immediately.
+
+## Search Source Mode
+
+The bridge can query Tavily, Brave, or both. You can control this behavior using one of four modes:
+
+- `tavily_only`: Only use the Tavily Search API.
+- `brave_only`: Only use the Brave Search API. Requires `BRAVE_API_KEY` to be set.
+- `combined`: Query both APIs in parallel and merge the results, deduplicating by URL.
+- `brave_prefer_tavily_fallback`: (Default) Try Brave Search first, and fall back to Tavily on error.
+
+Configure via the Admin UI (**Settings → Server**) which persists on the server and takes effect immediately.

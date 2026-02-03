@@ -91,3 +91,14 @@ npm run dev:bridge-server
 - `TAVILY_KEY_SELECTION_STRATEGY`: `round_robin`（默认）或 `random`
 
 也可以在 Admin UI（**Settings → Server**）中进行覆盖配置：配置会持久化在服务端并立即生效。
+
+## 搜索源模式
+
+Bridge 可以查询 Tavily、Brave 或两者同时查询。可通过以下四种模式控制：
+
+- `tavily_only`：仅使用 Tavily Search API。
+- `brave_only`：仅使用 Brave Search API。需要设置 `BRAVE_API_KEY`。
+- `combined`：并行查询两个 API 并合并结果，按 URL 去重。
+- `brave_prefer_tavily_fallback`：（默认）优先使用 Brave Search，出错时回退到 Tavily。
+
+可在 Admin UI（**Settings → Server**）中配置：配置会持久化在服务端并立即生效。
