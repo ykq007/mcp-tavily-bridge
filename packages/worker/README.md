@@ -9,6 +9,7 @@ One-click deployment of MCP Nexus to Cloudflare's free tier. This provides a uni
 - **Zero-cost hosting** on Cloudflare Workers free tier
 - **D1 Database** for persistent storage (automatic provisioning)
 - **Encrypted API keys** with Web Crypto API
+- **Admin UI included** - Full web interface for managing keys and tokens
 - **7 MCP tools**: tavily_search, tavily_extract, tavily_crawl, tavily_map, tavily_research, brave_web_search, brave_local_search
 
 ## Deploy

@@ -45,10 +45,13 @@
     "BRAVE_USAGE_LOG_MODE": "preview"
   },
 
-  // Static assets for landing page
+  // Static assets for Admin UI and landing page
+  // Assets are served before the worker, so /admin/assets/* are served directly
+  // Worker handles /admin, /admin/*, /mcp, /health, etc.
   "assets": {
     "directory": "./public",
-    "not_found_handling": "none"
+    "not_found_handling": "none",
+    "html_handling": "auto-trailing-slash"
   },
 
   // Development environment overrides

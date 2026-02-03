@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "wrangler dev",
     "build": "echo 'No build step required - Wrangler handles TypeScript'",
+    "build:admin": "cd ../admin-ui && npm run build && cp -r dist/* ../worker/public/admin/",
+    "predeploy": "mkdir -p public/admin && npm run build:admin",
     "deploy": "wrangler d1 execute DB --remote --file=migrations/0001_init.sql && wrangler deploy",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",

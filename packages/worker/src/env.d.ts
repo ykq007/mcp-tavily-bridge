@@ -1,4 +1,4 @@
-import type { D1Database, DurableObjectNamespace } from '@cloudflare/workers-types';
+import type { D1Database, DurableObjectNamespace, Fetcher } from '@cloudflare/workers-types';
 
 /**
  * Cloudflare Workers environment bindings
@@ -10,6 +10,9 @@ export interface Env {
   // Durable Objects
   MCP_SESSION: DurableObjectNamespace;
   RATE_LIMITER: DurableObjectNamespace;
+
+  // Static Assets (auto-bound when using wrangler assets)
+  ASSETS?: Fetcher;
 
   // Secrets (set via `wrangler secret put`)
   ADMIN_API_TOKEN: string;
