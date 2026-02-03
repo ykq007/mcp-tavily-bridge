@@ -1,0 +1,37 @@
+name: Verify Worker Deploy Button
+
+on:
+  pull_request:
+    paths:
+      - "packages/worker/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy-button-worker.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/worker/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy-button-worker.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Verify Deploy Button template
+        run: npm --workspace @mcp-nexus/worker run verify:deploy-button
+

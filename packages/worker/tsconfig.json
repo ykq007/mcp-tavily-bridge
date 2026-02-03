@@ -1,14 +1,17 @@
 {
-  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "dist",
     "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "lib": ["ES2022"],
-    "types": ["@cloudflare/workers-types"]
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "types": ["@cloudflare/workers-types"],
+    "noEmit": true
   },
-  "include": ["src"],
-  "references": [
-    { "path": "../core" }
-  ]
+  "include": ["src"]
 }

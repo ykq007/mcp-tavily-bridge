@@ -52,7 +52,7 @@ After deployment, you need to add API keys and create client tokens.
 ### 1. Add Tavily API Keys
 
 ```bash
-curl -X POST https://your-worker.workers.dev/admin/tavily-keys \
+curl -X POST https://your-worker.workers.dev/admin/api/tavily-keys \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"label": "Primary Key", "key": "tvly-xxxxx"}'
@@ -61,7 +61,7 @@ curl -X POST https://your-worker.workers.dev/admin/tavily-keys \
 ### 2. Add Brave API Keys (Optional)
 
 ```bash
-curl -X POST https://your-worker.workers.dev/admin/brave-keys \
+curl -X POST https://your-worker.workers.dev/admin/api/brave-keys \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"label": "Primary Key", "key": "BSAxxxxx"}'
@@ -70,7 +70,7 @@ curl -X POST https://your-worker.workers.dev/admin/brave-keys \
 ### 3. Create Client Token
 
 ```bash
-curl -X POST https://your-worker.workers.dev/admin/tokens \
+curl -X POST https://your-worker.workers.dev/admin/api/tokens \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"description": "Claude Desktop"}'
@@ -115,18 +115,18 @@ curl -X POST https://your-worker.workers.dev/mcp \
 |----------|------|-------------|
 | `POST /mcp` | Client Token | MCP JSON-RPC endpoint |
 | `GET /health` | None | Health check |
-| `GET /admin/tavily-keys` | Admin Token | List Tavily keys |
-| `POST /admin/tavily-keys` | Admin Token | Add Tavily key |
-| `DELETE /admin/tavily-keys/:id` | Admin Token | Delete Tavily key |
-| `GET /admin/brave-keys` | Admin Token | List Brave keys |
-| `POST /admin/brave-keys` | Admin Token | Add Brave key |
-| `DELETE /admin/brave-keys/:id` | Admin Token | Delete Brave key |
-| `GET /admin/tokens` | Admin Token | List client tokens |
-| `POST /admin/tokens` | Admin Token | Create client token |
-| `DELETE /admin/tokens/:id` | Admin Token | Revoke client token |
-| `GET /admin/settings` | Admin Token | Get settings |
-| `PUT /admin/settings` | Admin Token | Update settings |
-| `GET /admin/usage` | Admin Token | View usage logs |
+| `GET /admin/api/tavily-keys` | Admin Token | List Tavily keys |
+| `POST /admin/api/tavily-keys` | Admin Token | Add Tavily key |
+| `DELETE /admin/api/tavily-keys/:id` | Admin Token | Delete Tavily key |
+| `GET /admin/api/brave-keys` | Admin Token | List Brave keys |
+| `POST /admin/api/brave-keys` | Admin Token | Add Brave key |
+| `DELETE /admin/api/brave-keys/:id` | Admin Token | Delete Brave key |
+| `GET /admin/api/tokens` | Admin Token | List client tokens |
+| `POST /admin/api/tokens` | Admin Token | Create client token |
+| `DELETE /admin/api/tokens/:id` | Admin Token | Revoke client token |
+| `GET /admin/api/settings` | Admin Token | Get settings |
+| `PUT /admin/api/settings` | Admin Token | Update settings |
+| `GET /admin/api/usage` | Admin Token | View usage logs |
 
 ## Local Development
 
@@ -149,7 +149,7 @@ npm run dev
 ├─────────────────────────────────────────────────────────┤
 │  Hono Router                                            │
 │  ├── /mcp (MCP JSON-RPC)                               │
-│  ├── /admin/* (Admin API)                              │
+│  ├── /admin/api/* (Admin API)                          │
 │  └── /health                                           │
 ├─────────────────────────────────────────────────────────┤
 │  Services                                               │
