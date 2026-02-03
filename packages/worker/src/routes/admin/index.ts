@@ -11,6 +11,116 @@ const adminRouter = new Hono<{ Bindings: Env }>();
 // Apply admin auth to all routes
 adminRouter.use('*', adminAuth);
 
+// ============ Server Info ============
+
+adminRouter.get('/server-info', async (c) => {
+  const db = new D1Client(c.env.DB);
+  const settings = await db.getServerSettings();
+
+  // Get active key counts
+  const tavilyKeys = await db.getTavilyKeys();
+  const braveKeys = await db.getBraveKeys();
+  const activeTavilyKeys = tavilyKeys.filter(k => k.status === 'active').length;
+  const activeBraveKeys = braveKeys.filter(k => k.status === 'active').length;
+
+  // Build settings map
+  const settingsMap: Record<string, string> = {};
+  for (const setting of settings) {
+    settingsMap[setting.key] = setting.value;
+  }
+
+  return c.json({
+    tavilyKeySelectionStrategy: settingsMap.tavilyKeySelectionStrategy || c.env.TAVILY_KEY_SELECTION_STRATEGY || 'round_robin',
+    searchSourceMode: settingsMap.searchSourceMode || 'tavily_only',
+    braveSearchEnabled: activeBraveKeys > 0,
+    runtime: 'cloudflare-workers',
+  });
+});
+
+adminRouter.patch('/server-info', async (c) => {
+  const body = await c.req.json<{ tavilyKeySelectionStrategy?: string; searchSourceMode?: string }>();
+  const db = new D1Client(c.env.DB);
+
+  if (body.tavilyKeySelectionStrategy) {
+    if (body.tavilyKeySelectionStrategy !== 'round_robin' && body.tavilyKeySelectionStrategy !== 'random') {
+      return c.json({ error: 'Invalid tavilyKeySelectionStrategy' }, 400);
+    }
+    await db.upsertServerSetting('tavilyKeySelectionStrategy', body.tavilyKeySelectionStrategy);
+  }
+
+  if (body.searchSourceMode) {
+    const validModes = ['tavily_only', 'brave_only', 'combined', 'brave_prefer_tavily_fallback'];
+    if (!validModes.includes(body.searchSourceMode)) {
+      return c.json({ error: 'Invalid searchSourceMode' }, 400);
+    }
+    await db.upsertServerSetting('searchSourceMode', body.searchSourceMode);
+  }
+
+  return c.json({ success: true });
+});
+
+// ============ Keys (alias for Tavily Keys - for Admin UI compatibility) ============
+
+adminRouter.get('/keys', async (c) => {
+  const db = new D1Client(c.env.DB);
+  const keys = await db.getTavilyKeys();
+
+  return c.json(keys.map(k => ({
+    id: k.id,
+    label: k.label,
+    keyMasked: k.keyMasked,
+    status: k.status,
+    cooldownUntil: k.cooldownUntil,
+    lastUsedAt: k.lastUsedAt,
+    failureScore: k.failureScore,
+    creditsRemaining: k.creditsRemaining,
+    creditsCheckedAt: k.creditsCheckedAt,
+    createdAt: k.createdAt,
+    updatedAt: k.updatedAt,
+  })));
+});
+
+adminRouter.post('/keys', async (c) => {
+  const body = await c.req.json<{ label: string; apiKey: string }>();
+  const { label, apiKey } = body;
+
+  if (!label || !apiKey) {
+    return c.json({ error: 'label and apiKey are required' }, 400);
+  }
+
+  const db = new D1Client(c.env.DB);
+
+  const keyEncrypted = await encrypt(apiKey, c.env.KEY_ENCRYPTION_SECRET);
+  const keyMasked = maskApiKey(apiKey);
+  const id = generateId();
+
+  await db.createTavilyKey({
+    id,
+    label,
+    keyEncrypted: keyEncrypted.buffer as ArrayBuffer,
+    keyMasked,
+  });
+
+  return c.json({ id, label, keyMasked, status: 'active' }, 201);
+});
+
+adminRouter.patch('/keys/:id', async (c) => {
+  const id = c.req.param('id');
+  const body = await c.req.json<{ status?: string }>();
+  const db = new D1Client(c.env.DB);
+
+  await db.updateTavilyKey(id, { status: body.status });
+  return c.json({ id, status: body.status });
+});
+
+adminRouter.delete('/keys/:id', async (c) => {
+  const id = c.req.param('id');
+  const db = new D1Client(c.env.DB);
+
+  await db.deleteTavilyKey(id);
+  return c.json({ success: true });
+});
+
 // ============ Tavily Keys ============
 
 adminRouter.get('/tavily-keys', async (c) => {
