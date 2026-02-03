@@ -17,6 +17,7 @@ import { parseAes256GcmKeyFromEnv } from './crypto/crypto.js';
 import { TavilyKeyPool } from './tavily/keyPool.js';
 import { RotatingTavilyClient } from './tavily/rotatingClient.js';
 import { parseStdioCliArgs, usage } from './args.js';
+import { createLoggingBraveClient } from './brave/loggingClient.js';
 
 async function main(): Promise<void> {
   const parsed = parseStdioCliArgs(process.argv.slice(2));
@@ -60,7 +61,8 @@ async function main(): Promise<void> {
   const braveMinIntervalMs =
     Number.isFinite(braveMinIntervalMsEnv) && braveMinIntervalMsEnv > 0 ? braveMinIntervalMsEnv : minIntervalMsFromQps(braveMaxQps);
   const braveGate = new QueuedRateGate({ minIntervalMs: braveMinIntervalMs });
-  const braveClient = braveApiKey ? createBraveHttpClient({ apiKey: braveApiKey, gate: braveGate, timeoutMs: braveHttpTimeoutMs }) : undefined;
+  const braveHttpClient = braveApiKey ? createBraveHttpClient({ apiKey: braveApiKey, gate: braveGate, timeoutMs: braveHttpTimeoutMs }) : undefined;
+  const braveClient = braveHttpClient ? createLoggingBraveClient({ client: braveHttpClient, prisma }) : undefined;
 
   const server = createCombinedProxyServer({
     serverName: 'tavily-mcp',

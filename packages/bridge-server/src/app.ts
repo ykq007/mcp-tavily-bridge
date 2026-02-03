@@ -30,6 +30,7 @@ import { registerAdminRoutes } from './admin/routes.js';
 import { createSessionTransport } from './mcp/sessionTransport.js';
 import { renderLandingPage } from './landing.js';
 import { ServerSettings } from './settings/serverSettings.js';
+import { createLoggingBraveClient } from './brave/loggingClient.js';
 
 export type CreateBridgeAppOptions = {
   host?: string;
@@ -174,8 +175,11 @@ export function createBridgeApp(options: CreateBridgeAppOptions = {}): express.E
   const braveMaxQueueMs = Number.isFinite(BRAVE_MAX_QUEUE_MS) && BRAVE_MAX_QUEUE_MS >= 0 ? BRAVE_MAX_QUEUE_MS : 30_000;
   const braveMinIntervalMs = Number.isFinite(BRAVE_MIN_INTERVAL_MS) && BRAVE_MIN_INTERVAL_MS > 0 ? BRAVE_MIN_INTERVAL_MS : minIntervalMsFromQps(BRAVE_MAX_QPS);
   const braveGate = new QueuedRateGate({ minIntervalMs: braveMinIntervalMs });
-  const braveClient = BRAVE_API_KEY
+  const braveHttpClient = BRAVE_API_KEY
     ? createBraveHttpClient({ apiKey: BRAVE_API_KEY, gate: braveGate, timeoutMs: braveHttpTimeoutMs })
+    : undefined;
+  const braveClient = braveHttpClient
+    ? createLoggingBraveClient({ client: braveHttpClient, prisma })
     : undefined;
 
   const perTokenLimiter = new FixedWindowRateLimiter({ maxPerWindow: RATE_LIMIT_PER_MINUTE, windowMs: 60_000 });

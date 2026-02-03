@@ -70,8 +70,9 @@ model ClientToken {
   revokedAt   DateTime?
   createdAt   DateTime    @default(now())
 
-  researchJobs ResearchJob[]
-  usageLogs   TavilyToolUsage[]
+  researchJobs   ResearchJob[]
+  usageLogs      TavilyToolUsage[]
+  braveUsageLogs BraveToolUsage[]
 
   @@index([revokedAt, expiresAt])
 }
@@ -164,5 +165,34 @@ model BraveKey {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  usageLogs BraveToolUsage[]
+
   @@index([status, lastUsedAt])
+}
+
+model BraveToolUsage {
+  id              String   @id @default(cuid())
+  timestamp       DateTime @default(now())
+  toolName        String
+  outcome         String
+  latencyMs       Int?
+
+  clientTokenId     String
+  clientTokenPrefix String?
+  upstreamKeyId     String?
+
+  queryHash      String?
+  queryPreview   String?
+  argsJson       Json     @default(dbgenerated("'{}'"))
+  errorMessage   String?
+
+  clientToken    ClientToken @relation(fields: [clientTokenId], references: [id])
+  upstreamKey    BraveKey?   @relation(fields: [upstreamKeyId], references: [id])
+
+  @@index([timestamp])
+  @@index([toolName])
+  @@index([outcome])
+  @@index([clientTokenId, timestamp])
+  @@index([queryHash])
+  @@index([upstreamKeyId])
 }
