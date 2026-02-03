@@ -14,6 +14,12 @@ enum TavilyKeyStatus {
   invalid
 }
 
+enum BraveKeyStatus {
+  active
+  disabled
+  invalid
+}
+
 enum AdminRole {
   admin
   viewer
@@ -144,4 +150,19 @@ model ServerSetting {
   value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model BraveKey {
+  id           String         @id @default(cuid())
+  label        String         @unique
+  keyEncrypted Bytes
+  keyMasked    String?
+  status       BraveKeyStatus @default(active)
+  lastUsedAt   DateTime?
+  failureScore Int            @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, lastUsedAt])
 }

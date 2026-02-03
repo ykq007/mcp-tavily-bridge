@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import type { AdminApi, TavilyKeyDto, TavilyKeyStatus } from '../lib/adminApi';
+import type { AdminApi, TavilyKeyDto, TavilyKeyStatus, BraveKeyDto, BraveKeyStatus } from '../lib/adminApi';
 import { formatDateTime } from '../lib/format';
 import { KeyRevealCell } from '../app/KeyRevealCell';
 import { KeyCreditsCell } from '../app/KeyCreditsCell';
@@ -19,6 +19,7 @@ import { DataTable, type DataTableColumn } from '../ui/DataTable';
 
 type SortField = 'label' | 'status' | 'lastUsedAt' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
+type KeyTab = 'tavily' | 'brave';
 
 const PAGE_SIZE = 10;
 
@@ -27,10 +28,20 @@ export function KeysPage({ api }: { api: AdminApi }) {
   const { t: tc } = useTranslation('common');
   const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<KeyTab>('tavily');
+
+  // Tavily keys state
   const [keys, setKeys] = useState<TavilyKeyDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncingCredits, setSyncingCredits] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Brave keys state
+  const [braveKeys, setBraveKeys] = useState<BraveKeyDto[]>([]);
+  const [braveLoading, setBraveLoading] = useState(true);
+  const [braveError, setBraveError] = useState<string | null>(null);
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,6 +75,15 @@ export function KeysPage({ api }: { api: AdminApi }) {
   const [bulkDeleteIds, setBulkDeleteIds] = useState<string[] | null>(null);
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
+  // Brave key dialog state
+  const [braveCreateOpen, setBraveCreateOpen] = useState(false);
+  const [braveCreating, setBraveCreating] = useState(false);
+  const [newBraveLabel, setNewBraveLabel] = useState('');
+  const [newBraveApiKey, setNewBraveApiKey] = useState('');
+  const [braveTouched, setBraveTouched] = useState<{ label?: boolean; apiKey?: boolean }>({});
+  const [braveKeyToDelete, setBraveKeyToDelete] = useState<BraveKeyDto | null>(null);
+  const [braveDeleting, setBraveDeleting] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -77,9 +97,23 @@ export function KeysPage({ api }: { api: AdminApi }) {
     }
   }, [api, tc]);
 
+  const loadBraveKeys = useCallback(async () => {
+    setBraveLoading(true);
+    setBraveError(null);
+    try {
+      setBraveKeys(await api.listBraveKeys());
+    } catch (e: any) {
+      setBraveError(typeof e?.message === 'string' ? e.message : tc('errors.unknownError'));
+      setBraveKeys([]);
+    } finally {
+      setBraveLoading(false);
+    }
+  }, [api, tc]);
+
   useEffect(() => {
     void load();
-  }, [load]);
+    void loadBraveKeys();
+  }, [load, loadBraveKeys]);
 
   // Filtered and sorted keys
   const filteredKeys = useMemo(() => {
@@ -161,6 +195,22 @@ export function KeysPage({ api }: { api: AdminApi }) {
 
   const isFormValid = !formErrors.label && !formErrors.apiKey && newLabel.trim() && newApiKey.trim();
 
+  // Brave form validation
+  const braveFormErrors = useMemo(() => {
+    const errors: { label?: string; apiKey?: string } = {};
+    if (braveTouched.label && !newBraveLabel.trim()) {
+      errors.label = t('form.labelRequired');
+    } else if (braveTouched.label && newBraveLabel.length < 2) {
+      errors.label = t('form.labelMinLength');
+    }
+    if (braveTouched.apiKey && !newBraveApiKey.trim()) {
+      errors.apiKey = t('form.apiKeyRequired');
+    }
+    return errors;
+  }, [newBraveLabel, newBraveApiKey, braveTouched, t]);
+
+  const isBraveFormValid = !braveFormErrors.label && !braveFormErrors.apiKey && newBraveLabel.trim() && newBraveApiKey.trim();
+
   function clearFilters() {
     setSearchQuery('');
     setStatusFilter('all');
@@ -200,6 +250,16 @@ export function KeysPage({ api }: { api: AdminApi }) {
     }
   }
 
+  async function onUpdateBraveStatus(id: string, status: BraveKeyStatus) {
+    try {
+      await api.updateBraveKeyStatus(id, status);
+      toast.push({ title: t('toast.updated'), message: t('toast.updatedMessage', { status }), variant: 'success' });
+      await loadBraveKeys();
+    } catch (e: any) {
+      toast.push({ title: t('toast.updateFailed'), message: typeof e?.message === 'string' ? e.message : tc('errors.unknownError'), variant: 'error' });
+    }
+  }
+
   async function onDeleteKey() {
     if (!keyToDelete) return;
     setDeleting(true);
@@ -212,6 +272,39 @@ export function KeysPage({ api }: { api: AdminApi }) {
       toast.push({ title: t('toast.deleteFailed'), message: typeof e?.message === 'string' ? e.message : tc('errors.unknownError'), variant: 'error' });
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function onCreateBraveKey() {
+    if (!newBraveLabel.trim() || !newBraveApiKey.trim()) return;
+    setBraveCreating(true);
+    try {
+      await api.createBraveKey({ label: newBraveLabel.trim(), apiKey: newBraveApiKey.trim() });
+      toast.push({ title: t('toast.added'), message: t('toast.addedMessage', { name: newBraveLabel.trim() }), variant: 'success' });
+      setBraveCreateOpen(false);
+      setNewBraveLabel('');
+      setNewBraveApiKey('');
+      setBraveTouched({});
+      await loadBraveKeys();
+    } catch (e: any) {
+      toast.push({ title: t('toast.createFailed'), message: typeof e?.message === 'string' ? e.message : tc('errors.unknownError'), variant: 'error' });
+    } finally {
+      setBraveCreating(false);
+    }
+  }
+
+  async function onDeleteBraveKey() {
+    if (!braveKeyToDelete) return;
+    setBraveDeleting(true);
+    try {
+      await api.deleteBraveKey(braveKeyToDelete.id);
+      toast.push({ title: t('toast.deleted'), message: t('toast.deletedMessage', { name: braveKeyToDelete.label }), variant: 'success' });
+      setBraveKeyToDelete(null);
+      await loadBraveKeys();
+    } catch (e: any) {
+      toast.push({ title: t('toast.deleteFailed'), message: typeof e?.message === 'string' ? e.message : tc('errors.unknownError'), variant: 'error' });
+    } finally {
+      setBraveDeleting(false);
     }
   }
 
@@ -299,10 +392,44 @@ export function KeysPage({ api }: { api: AdminApi }) {
 
   const hasFilters = searchQuery.trim() || statusFilter !== 'all';
 
+  // Brave stats
+  const braveStats = useMemo(() => {
+    const active = braveKeys.filter((k) => k.status === 'active').length;
+    const disabled = braveKeys.filter((k) => k.status === 'disabled').length;
+    const invalid = braveKeys.filter((k) => k.status === 'invalid').length;
+    const total = braveKeys.length;
+    const activeRate = total > 0 ? Math.round((active / total) * 100) : 0;
+    return { active, disabled, invalid, total, activeRate };
+  }, [braveKeys]);
+
   return (
     <div className="stack">
-      {/* 2026: KPI Dashboard */}
-      <div className="kpis">
+      {/* Tab Navigation */}
+      <div className="tabs" role="tablist">
+        <button
+          role="tab"
+          aria-selected={activeTab === 'tavily'}
+          className={`tab${activeTab === 'tavily' ? ' tab--active' : ''}`}
+          onClick={() => setActiveTab('tavily')}
+        >
+          {t('tabs.tavily')}
+          <span className="tabBadge">{keys.length}</span>
+        </button>
+        <button
+          role="tab"
+          aria-selected={activeTab === 'brave'}
+          className={`tab${activeTab === 'brave' ? ' tab--active' : ''}`}
+          onClick={() => setActiveTab('brave')}
+        >
+          {t('tabs.brave')}
+          <span className="tabBadge">{braveKeys.length}</span>
+        </button>
+      </div>
+
+      {activeTab === 'tavily' ? (
+        <>
+          {/* 2026: KPI Dashboard */}
+          <div className="kpis">
         <KpiCard
           title={t('kpi.totalCapacity')}
           value={stats.totalCredits.toLocaleString()}
@@ -518,7 +645,7 @@ export function KeysPage({ api }: { api: AdminApi }) {
                   cell: (k: TavilyKeyDto) => (
                     <StatusMenu
                       status={k.status}
-                      onChange={(s) => onUpdateStatus(k.id, s)}
+                      onChange={(s) => onUpdateStatus(k.id, s as TavilyKeyStatus)}
                     />
                   )
                 },
@@ -574,6 +701,142 @@ export function KeysPage({ api }: { api: AdminApi }) {
           <Pagination total={filteredKeys.length} page={page} pageSize={PAGE_SIZE} onChange={setPage} />
         </div>
       </div>
+        </>
+      ) : (
+        <>
+          {/* Brave KPI Dashboard */}
+          <div className="kpis">
+            <KpiCard
+              title={t('brave.kpi.activeKeys')}
+              value={`${braveStats.active}/${braveStats.total}`}
+              icon={<IconKey />}
+              variant="keys"
+            />
+            <KpiCard
+              title={t('brave.kpi.systemHealth')}
+              value={`${braveStats.activeRate}%`}
+              icon={<IconShield />}
+              variant="usage"
+            />
+          </div>
+
+          <div className="card">
+            <div className="cardHeader">
+              <div className="row">
+                <div>
+                  <div className="h2">{t('brave.title')}</div>
+                  <div className="help">
+                    {braveStats.total} total • {braveStats.active} active • {braveStats.invalid} invalid •{' '}
+                    {braveStats.disabled} disabled
+                  </div>
+                </div>
+                <div className="flex gap-3 items-center">
+                  <button className="btn" onClick={loadBraveKeys} disabled={braveLoading}>
+                    <IconRefresh className={braveLoading ? 'spin' : ''} />
+                    {t('brave.actions.refresh')}
+                  </button>
+                  <button className="btn" data-variant="primary" onClick={() => setBraveCreateOpen(true)}>
+                    <IconPlus />
+                    {t('brave.actions.addKey')}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="cardBody p-0">
+              {braveError ? (
+                <div className="p-4">
+                  <ErrorBanner message={braveError} onRetry={loadBraveKeys} retrying={braveLoading} />
+                </div>
+              ) : null}
+
+              <DataTable
+                ariaLabel={t('brave.title')}
+                columns={(
+                  [
+                    {
+                      id: 'label',
+                      header: t('table.label'),
+                      headerStyle: { width: '20%' },
+                      dataLabel: t('table.label'),
+                      cellClassName: 'mono',
+                      cell: (k: BraveKeyDto) => k.label
+                    },
+                    {
+                      id: 'key',
+                      header: t('table.apiKey'),
+                      headerStyle: { width: '30%' },
+                      dataLabel: t('table.apiKey'),
+                      cell: (k: BraveKeyDto) => (
+                        <KeyRevealCell
+                          keyId={k.id}
+                          maskedKey={k.maskedKey || '••••••••••••'}
+                          api={{ revealKey: api.revealBraveKey } as any}
+                        />
+                      )
+                    },
+                    {
+                      id: 'status',
+                      header: t('table.status'),
+                      headerStyle: { width: '15%' },
+                      dataLabel: t('table.status'),
+                      cell: (k: BraveKeyDto) => (
+                        <StatusMenu
+                          status={k.status}
+                          options={['active', 'disabled', 'invalid']}
+                          onChange={(s) => onUpdateBraveStatus(k.id, s as BraveKeyStatus)}
+                        />
+                      )
+                    },
+                    {
+                      id: 'lastUsed',
+                      header: t('table.lastUsed'),
+                      headerStyle: { width: '15%' },
+                      dataLabel: t('table.lastUsed'),
+                      cellClassName: 'mono',
+                      cell: (k: BraveKeyDto) => formatDateTime(k.lastUsedAt)
+                    },
+                    {
+                      id: 'created',
+                      header: t('table.created'),
+                      headerStyle: { width: '15%' },
+                      dataLabel: t('table.created'),
+                      cellClassName: 'mono',
+                      cell: (k: BraveKeyDto) => formatDateTime(k.createdAt)
+                    },
+                    {
+                      id: 'actions',
+                      header: '',
+                      headerStyle: { width: '5%', textAlign: 'right' },
+                      headerAlign: 'right',
+                      dataLabel: t('table.actions'),
+                      cellAlign: 'right',
+                      cell: (k: BraveKeyDto) => (
+                        <IconButton
+                          icon={<IconTrash />}
+                          variant="ghost-danger"
+                          onClick={() => setBraveKeyToDelete(k)}
+                          title={t('button.deleteKey')}
+                        />
+                      )
+                    }
+                  ] satisfies DataTableColumn<BraveKeyDto>[]
+                )}
+                rows={braveKeys}
+                rowKey={(k) => k.id}
+                loading={braveLoading && braveKeys.length === 0}
+                empty={
+                  <EmptyState
+                    icon={<IconKey />}
+                    message={t('brave.empty.noKeys')}
+                    action={{ label: t('brave.actions.addKey'), onClick: () => setBraveCreateOpen(true) }}
+                  />
+                }
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       <Dialog title={t('dialog.addTitle')} open={createOpen} onClose={() => (creating ? null : setCreateOpen(false))}>
         <div className="stack">
@@ -668,6 +931,90 @@ export function KeysPage({ api }: { api: AdminApi }) {
         confirming={bulkDeleting}
         onClose={() => (bulkDeleting ? null : setBulkDeleteIds(null))}
         onConfirm={onBulkDelete}
+      />
+
+      {/* Brave Create Dialog */}
+      <Dialog title={t('brave.dialog.addTitle')} open={braveCreateOpen} onClose={() => (braveCreating ? null : setBraveCreateOpen(false))}>
+        <div className="stack">
+          <div className="grid2">
+            <div className="stack">
+              <label className="label" htmlFor="brave-key-label">
+                {t('form.label')} <span style={{ color: 'var(--danger)' }}>{t('form.required')}</span>
+              </label>
+              <input
+                id="brave-key-label"
+                className="input"
+                data-error={!!(braveFormErrors.label && braveTouched.label)}
+                value={newBraveLabel}
+                onChange={(e) => setNewBraveLabel(e.target.value)}
+                onBlur={() => setBraveTouched((prev) => ({ ...prev, label: true }))}
+                placeholder={t('form.labelPlaceholder')}
+                autoComplete="off"
+                aria-invalid={!!(braveFormErrors.label && braveTouched.label)}
+                aria-describedby={braveFormErrors.label && braveTouched.label ? 'brave-label-error' : 'brave-label-help'}
+              />
+              {braveFormErrors.label && braveTouched.label ? (
+                <div id="brave-label-error" className="fieldError">
+                  {braveFormErrors.label}
+                </div>
+              ) : (
+                <div id="brave-label-help" className="help">
+                  {t('form.labelHelp')}
+                </div>
+              )}
+            </div>
+            <div className="stack">
+              <label className="label" htmlFor="brave-api-key">
+                {t('form.apiKey')} <span style={{ color: 'var(--danger)' }}>{t('form.required')}</span>
+              </label>
+              <input
+                id="brave-api-key"
+                className="input mono"
+                data-error={!!(braveFormErrors.apiKey && braveTouched.apiKey)}
+                value={newBraveApiKey}
+                onChange={(e) => setNewBraveApiKey(e.target.value)}
+                onBlur={() => setBraveTouched((prev) => ({ ...prev, apiKey: true }))}
+                placeholder={t('brave.form.apiKeyPlaceholder')}
+                autoComplete="off"
+                aria-invalid={!!(braveFormErrors.apiKey && braveTouched.apiKey)}
+                aria-describedby={braveFormErrors.apiKey && braveTouched.apiKey ? 'brave-apikey-error' : 'brave-apikey-help'}
+              />
+              {braveFormErrors.apiKey && braveTouched.apiKey ? (
+                <div id="brave-apikey-error" className="fieldError">
+                  {braveFormErrors.apiKey}
+                </div>
+              ) : (
+                <div id="brave-apikey-help" className="help">
+                  {t('form.apiKeyHelp')}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            <button className="btn" onClick={() => setBraveCreateOpen(false)} disabled={braveCreating}>
+              {tc('actions.cancel')}
+            </button>
+            <button className="btn" data-variant="primary" onClick={onCreateBraveKey} disabled={braveCreating || !isBraveFormValid}>
+              <IconKey />
+              {braveCreating ? t('button.adding') : t('brave.actions.addKey')}
+            </button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Brave Delete Dialog */}
+      <ConfirmDialog
+        open={!!braveKeyToDelete}
+        title={t('dialog.deleteTitle')}
+        description={t('dialog.deleteDescription', { label: braveKeyToDelete?.label ?? '' })}
+        confirmLabel={tc('actions.delete')}
+        confirmVariant="danger"
+        requireText="DELETE"
+        requireTextLabel={t('dialog.requireDeleteText')}
+        confirming={braveDeleting}
+        onClose={() => (braveDeleting ? null : setBraveKeyToDelete(null))}
+        onConfirm={onDeleteBraveKey}
       />
     </div>
   );

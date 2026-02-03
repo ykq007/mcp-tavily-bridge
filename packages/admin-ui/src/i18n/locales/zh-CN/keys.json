@@ -1,5 +1,69 @@
 {
-  "title": "Tavily 密钥",
+  "title": "API 密钥",
+  "tabs": {
+    "tavily": "Tavily",
+    "brave": "Brave 搜索"
+  },
+  "tavily": {
+    "title": "Tavily 密钥",
+    "stats": {
+      "total": "共 {{count}} 个",
+      "active": "{{count}} 个活跃",
+      "cooldown": "{{count}} 个冷却中",
+      "invalid": "{{count}} 个无效",
+      "disabled": "{{count}} 个已禁用",
+      "summary": "共 {{total}} 个 \u2022 {{active}} 个活跃 \u2022 {{cooldown}} 个冷却中 \u2022 {{invalid}} 个无效 \u2022 {{disabled}} 个已禁用"
+    },
+    "kpi": {
+      "totalCapacity": "总容量",
+      "activeKeys": "活跃密钥",
+      "systemHealth": "系统健康度"
+    },
+    "actions": {
+      "addKey": "添加密钥",
+      "refresh": "刷新",
+      "checkCredits": "检查额度",
+      "checkingCredits": "检查中..."
+    },
+    "dialog": {
+      "addTitle": "添加 Tavily 密钥"
+    },
+    "form": {
+      "apiKeyFormat": "API 密钥应以 \"tvly-\" 开头",
+      "apiKeyPlaceholder": "tvly-..."
+    },
+    "empty": {
+      "noKeys": "暂无 Tavily 密钥。添加一个密钥以开始轮换。"
+    }
+  },
+  "brave": {
+    "title": "Brave 搜索密钥",
+    "stats": {
+      "total": "共 {{count}} 个",
+      "active": "{{count}} 个活跃",
+      "invalid": "{{count}} 个无效",
+      "disabled": "{{count}} 个已禁用",
+      "summary": "共 {{total}} 个 \u2022 {{active}} 个活跃 \u2022 {{invalid}} 个无效 \u2022 {{disabled}} 个已禁用"
+    },
+    "kpi": {
+      "activeKeys": "活跃密钥",
+      "systemHealth": "系统健康度"
+    },
+    "actions": {
+      "addKey": "添加密钥",
+      "refresh": "刷新"
+    },
+    "dialog": {
+      "addTitle": "添加 Brave 搜索密钥"
+    },
+    "form": {
+      "apiKeyFormat": "API 密钥应以 \"BSA\" 开头",
+      "apiKeyPlaceholder": "BSA..."
+    },
+    "empty": {
+      "noKeys": "暂无 Brave 密钥。添加一个密钥以启用原生 Brave 搜索。"
+    }
+  },
   "stats": {
     "total": "共 {{count}} 个",
     "active": "{{count}} 个活跃",

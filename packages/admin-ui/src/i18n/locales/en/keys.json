@@ -1,5 +1,69 @@
 {
-  "title": "Tavily keys",
+  "title": "API Keys",
+  "tabs": {
+    "tavily": "Tavily",
+    "brave": "Brave Search"
+  },
+  "tavily": {
+    "title": "Tavily keys",
+    "stats": {
+      "total": "{{count}} total",
+      "active": "{{count}} active",
+      "cooldown": "{{count}} cooldown",
+      "invalid": "{{count}} invalid",
+      "disabled": "{{count}} disabled",
+      "summary": "{{total}} total \u2022 {{active}} active \u2022 {{cooldown}} cooldown \u2022 {{invalid}} invalid \u2022 {{disabled}} disabled"
+    },
+    "kpi": {
+      "totalCapacity": "Total Capacity",
+      "activeKeys": "Active Keys",
+      "systemHealth": "System Health"
+    },
+    "actions": {
+      "addKey": "Add key",
+      "refresh": "Refresh",
+      "checkCredits": "Check Credits",
+      "checkingCredits": "Checking..."
+    },
+    "dialog": {
+      "addTitle": "Add Tavily key"
+    },
+    "form": {
+      "apiKeyFormat": "API key should start with \"tvly-\"",
+      "apiKeyPlaceholder": "tvly-..."
+    },
+    "empty": {
+      "noKeys": "No Tavily keys found. Add a key to start rotating."
+    }
+  },
+  "brave": {
+    "title": "Brave Search keys",
+    "stats": {
+      "total": "{{count}} total",
+      "active": "{{count}} active",
+      "invalid": "{{count}} invalid",
+      "disabled": "{{count}} disabled",
+      "summary": "{{total}} total \u2022 {{active}} active \u2022 {{invalid}} invalid \u2022 {{disabled}} disabled"
+    },
+    "kpi": {
+      "activeKeys": "Active Keys",
+      "systemHealth": "System Health"
+    },
+    "actions": {
+      "addKey": "Add key",
+      "refresh": "Refresh"
+    },
+    "dialog": {
+      "addTitle": "Add Brave Search key"
+    },
+    "form": {
+      "apiKeyFormat": "API key should start with \"BSA\"",
+      "apiKeyPlaceholder": "BSA..."
+    },
+    "empty": {
+      "noKeys": "No Brave keys found. Add a key to enable native Brave Search."
+    }
+  },
   "stats": {
     "total": "{{count}} total",
     "active": "{{count}} active",

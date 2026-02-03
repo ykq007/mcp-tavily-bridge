@@ -1,4 +1,5 @@
 export type TavilyKeyStatus = 'active' | 'disabled' | 'cooldown' | 'invalid';
+export type BraveKeyStatus = 'active' | 'disabled' | 'invalid';
 
 export type TavilyKeyDto = {
   id: string;
@@ -19,6 +20,15 @@ export type ClientTokenDto = {
   description: string | null;
   revokedAt: string | null;
   expiresAt: string | null;
+  createdAt: string;
+};
+
+export type BraveKeyDto = {
+  id: string;
+  label: string;
+  maskedKey: string | null;
+  status: BraveKeyStatus;
+  lastUsedAt: string | null;
   createdAt: string;
 };
 
@@ -97,6 +107,12 @@ export type AdminApi = {
   deleteKey: (id: string) => Promise<{ ok: true }>;
   refreshKeyCredits: (id: string) => Promise<{ remainingCredits: number; totalCredits: number }>;
   syncAllKeyCredits: () => Promise<{ ok: true; total: number; success: number; failed: number }>;
+
+  listBraveKeys: () => Promise<BraveKeyDto[]>;
+  createBraveKey: (input: { label: string; apiKey: string }) => Promise<{ id: string }>;
+  revealBraveKey: (id: string) => Promise<{ apiKey: string }>;
+  updateBraveKeyStatus: (id: string, status: BraveKeyStatus) => Promise<{ ok: true }>;
+  deleteBraveKey: (id: string) => Promise<{ ok: true }>;
 
   listTokens: () => Promise<ClientTokenDto[]>;
   createToken: (input: { description?: string; expiresInSeconds?: number }) => Promise<{ id: string; token: string }>;
@@ -208,6 +224,13 @@ export function createAdminApi(
     deleteKey: (id) => requestJson(`/admin/api/keys/${encodeURIComponent(id)}`, { method: 'DELETE', body: '{}' }),
     refreshKeyCredits: (id) => requestJson(`/admin/api/keys/${encodeURIComponent(id)}/refresh-credits`, { method: 'POST', body: '{}' }),
     syncAllKeyCredits: () => requestJson('/admin/api/keys/sync-credits', { method: 'POST', body: '{}' }),
+
+    listBraveKeys: () => getJson('/admin/api/brave-keys'),
+    createBraveKey: (input) => requestJson('/admin/api/brave-keys', { method: 'POST', body: JSON.stringify(input) }),
+    revealBraveKey: (id) => getJson(`/admin/api/brave-keys/${encodeURIComponent(id)}/reveal`),
+    updateBraveKeyStatus: (id, status) =>
+      requestJson(`/admin/api/brave-keys/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+    deleteBraveKey: (id) => requestJson(`/admin/api/brave-keys/${encodeURIComponent(id)}`, { method: 'DELETE', body: '{}' }),
 
     listTokens: () => getJson('/admin/api/tokens'),
     createToken: (input) => requestJson('/admin/api/tokens', { method: 'POST', body: JSON.stringify(input) }),

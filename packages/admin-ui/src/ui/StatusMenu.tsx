@@ -3,19 +3,21 @@ import type { TavilyKeyStatus } from '../lib/adminApi';
 import { Portal } from './Portal';
 
 interface StatusMenuProps {
-  status: TavilyKeyStatus;
-  onChange: (status: TavilyKeyStatus) => void;
+  status: string;
+  onChange: (status: string) => void;
   disabled?: boolean;
+  options?: string[];
 }
 
-export function StatusMenu({ status, onChange, disabled }: StatusMenuProps) {
+const DEFAULT_OPTIONS: TavilyKeyStatus[] = ['active', 'disabled', 'cooldown', 'invalid'];
+
+export function StatusMenu({ status, onChange, disabled, options = DEFAULT_OPTIONS }: StatusMenuProps) {
   const [open, setOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const options: TavilyKeyStatus[] = useMemo(() => ['active', 'disabled', 'cooldown', 'invalid'], []);
   const variant = status === 'active' ? 'success' : status === 'disabled' ? 'neutral' : status === 'cooldown' ? 'warning' : 'danger';
 
   const [menuPos, setMenuPos] = useState<{ top: number; left: number; minWidth: number } | null>(null);
@@ -53,7 +55,7 @@ export function StatusMenu({ status, onChange, disabled }: StatusMenuProps) {
 
   const handleMenuRef = useCallback(
     (el: HTMLDivElement | null) => {
-      menuRef.current = el;
+      (menuRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
       if (el) updatePosition();
     },
     [updatePosition]

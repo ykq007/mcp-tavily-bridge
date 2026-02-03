@@ -28,6 +28,20 @@ function maskTavilyApiKey(apiKey: string): string {
   return `${prefix}${rest.slice(0, 4)}...${rest.slice(-4)}`;
 }
 
+function maskBraveApiKey(apiKey: string): string {
+  const raw = apiKey.trim();
+  if (!raw) return '';
+  const hasPrefix = raw.startsWith('BSA');
+  const prefix = hasPrefix ? 'BSA' : '';
+  const rest = hasPrefix ? raw.slice(3) : raw;
+  if (rest.length <= 8) {
+    const start = rest.slice(0, Math.min(2, rest.length));
+    const end = rest.slice(Math.max(0, rest.length - 2));
+    return `${prefix}${start}...${end}`;
+  }
+  return `${prefix}${rest.slice(0, 4)}...${rest.slice(-4)}`;
+}
+
 function normalizeBasePath(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed) return '/admin';
@@ -379,6 +393,131 @@ export function registerAdminRoutes(
       const deleted = await prisma.tavilyKey.delete({ where: { id: req.params.id } });
       await prisma.auditLog.create({
         data: { eventType: 'key.delete', outcome: 'success', resourceType: 'tavily_key', resourceId: deleted.id, detailsJson: { label: deleted.label } }
+      });
+      res.json({ ok: true });
+    } catch (err: any) {
+      if (err?.code === 'P2025') {
+        res.status(404).json({ error: 'Key not found' });
+        return;
+      }
+      throw err;
+    }
+  }));
+
+  // ==================== Brave Keys ====================
+
+  app.get(p('/brave-keys'), requireAdmin, asyncHandler(async (req, res) => {
+    const keys = await prisma.braveKey.findMany({ orderBy: { createdAt: 'desc' } });
+    res.json(
+      keys.map((k) => ({
+        id: k.id,
+        label: k.label,
+        maskedKey: k.keyMasked ?? null,
+        status: k.status,
+        lastUsedAt: k.lastUsedAt,
+        createdAt: k.createdAt
+      }))
+    );
+  }));
+
+  app.get(p('/brave-keys/:id/reveal'), requireAdmin, asyncHandler(async (req, res) => {
+    const ip = typeof req.ip === 'string' ? req.ip : null;
+    const userAgent = typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : null;
+
+    const limitKey = `brave-key.reveal:${ip ?? 'unknown'}`;
+    const check = revealLimiter.check(limitKey);
+    if (!check.ok) {
+      res.setHeader('Cache-Control', 'no-store');
+      res.status(429).json({ error: 'Rate limit exceeded', retryAfterMs: check.retryAfterMs });
+      return;
+    }
+
+    try {
+      const key = await prisma.braveKey.findUnique({ where: { id: req.params.id } });
+      if (!key) {
+        await prisma.auditLog.create({
+          data: {
+            eventType: 'brave_key.reveal',
+            outcome: 'not_found',
+            resourceType: 'brave_key',
+            resourceId: req.params.id,
+            ip,
+            userAgent,
+            detailsJson: {}
+          }
+        });
+        res.setHeader('Cache-Control', 'no-store');
+        res.status(404).json({ error: 'Key not found' });
+        return;
+      }
+
+      const apiKey = decryptAes256Gcm(Buffer.from(key.keyEncrypted), encryptionKey);
+
+      await prisma.auditLog.create({
+        data: {
+          eventType: 'brave_key.reveal',
+          outcome: 'success',
+          resourceType: 'brave_key',
+          resourceId: key.id,
+          ip,
+          userAgent,
+          detailsJson: { label: key.label }
+        }
+      });
+
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({ apiKey });
+    } catch (err) {
+      await prisma.auditLog.create({
+        data: {
+          eventType: 'brave_key.reveal',
+          outcome: 'error',
+          resourceType: 'brave_key',
+          resourceId: req.params.id,
+          ip,
+          userAgent,
+          detailsJson: { error: err instanceof Error ? err.message : 'Unknown error' }
+        }
+      }).catch(() => {});
+      res.setHeader('Cache-Control', 'no-store');
+      res.status(500).json({ error: 'Failed to reveal key' });
+    }
+  }));
+
+  app.post(p('/brave-keys'), requireAdmin, asyncHandler(async (req, res) => {
+    const { label, apiKey } = req.body ?? {};
+    if (typeof label !== 'string' || typeof apiKey !== 'string' || !label || !apiKey) {
+      res.status(400).json({ error: 'label and apiKey are required' });
+      return;
+    }
+    const keyEncrypted = encryptAes256Gcm(apiKey, encryptionKey);
+    const keyMasked = maskBraveApiKey(apiKey);
+    const created = await prisma.braveKey.create({ data: { label, keyEncrypted: Uint8Array.from(keyEncrypted), keyMasked } });
+    await prisma.auditLog.create({ data: { eventType: 'brave_key.create', outcome: 'success', detailsJson: { label } } });
+    res.json({ id: created.id });
+  }));
+
+  app.patch(p('/brave-keys/:id'), requireAdmin, asyncHandler(async (req, res) => {
+    const { status } = req.body ?? {};
+    if (status && !['active', 'disabled', 'invalid'].includes(status)) {
+      res.status(400).json({ error: 'invalid status' });
+      return;
+    }
+    const updated = await prisma.braveKey.update({
+      where: { id: req.params.id },
+      data: { status }
+    });
+    await prisma.auditLog.create({
+      data: { eventType: 'brave_key.update', outcome: 'success', resourceType: 'brave_key', resourceId: updated.id }
+    });
+    res.json({ ok: true });
+  }));
+
+  app.delete(p('/brave-keys/:id'), requireAdmin, asyncHandler(async (req, res) => {
+    try {
+      const deleted = await prisma.braveKey.delete({ where: { id: req.params.id } });
+      await prisma.auditLog.create({
+        data: { eventType: 'brave_key.delete', outcome: 'success', resourceType: 'brave_key', resourceId: deleted.id, detailsJson: { label: deleted.label } }
       });
       res.json({ ok: true });
     } catch (err: any) {
