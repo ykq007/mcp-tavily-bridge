@@ -8,3 +8,6 @@ ADMIN_API_TOKEN=your-admin-token-here
 # Key Encryption Secret - used to encrypt API keys at rest
 # Must be a base64-encoded 32-byte key (e.g., using: openssl rand -base64 32)
 KEY_ENCRYPTION_SECRET=your-base64-encryption-key-here
+
+# Optional: Search source mode (tavily_only | brave_only | combined | brave_prefer_tavily_fallback)
+# SEARCH_SOURCE_MODE=brave_prefer_tavily_fallback

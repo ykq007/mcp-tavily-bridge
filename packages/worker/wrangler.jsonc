@@ -41,6 +41,7 @@
     "MCP_RATE_LIMIT_PER_MINUTE": "60",
     "MCP_GLOBAL_RATE_LIMIT_PER_MINUTE": "600",
     "TAVILY_KEY_SELECTION_STRATEGY": "round_robin",
+    "SEARCH_SOURCE_MODE": "brave_prefer_tavily_fallback",
     "TAVILY_USAGE_LOG_MODE": "preview",
     "BRAVE_USAGE_LOG_MODE": "preview"
   },

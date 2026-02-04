@@ -72,7 +72,8 @@ async function main(): Promise<void> {
     braveOverflow,
     braveMaxQueueMs,
     getAuthToken: () => rawToken,
-    getDefaultParameters: () => getDefaultParametersFromEnv()
+    getDefaultParameters: () => getDefaultParametersFromEnv(),
+    getSearchSourceMode: () => parsed.value.searchSourceMode
   });
 
   const transport = new StdioServerTransport();

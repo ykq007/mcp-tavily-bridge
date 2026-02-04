@@ -104,8 +104,17 @@ npm run dev:bridge-server
 
 | 变量                          | 描述                                                                                                                                                     | 默认值                           |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| `SEARCH_SOURCE_MODE`          | 定义搜索行为：`tavily_only`（仅 Tavily），`brave_only`（仅 Brave），`combined`（并行查询），或 `brave_prefer_tavily_fallback`（Brave 优先，出错时回退到 Tavily）。 | `brave_prefer_tavily_fallback`   |
+| `SEARCH_SOURCE_MODE`          | 定义搜索行为：`tavily_only`（仅 Tavily），`brave_only`（仅 Brave），`combined`（并行查询），或 `brave_prefer_tavily_fallback`（Brave 优先，出错时回退到 Tavily）。**注意**：合并模式下 `offset>0` 时仅返回 Brave 结果以避免 Tavily 重复。 | `brave_prefer_tavily_fallback`   |
 | `TAVILY_KEY_SELECTION_STRATEGY` | 当有多个活动的 Tavily 密钥时，选择上游密钥的策略：`round_robin`（轮询，默认）或 `random`（随机）。                                                        | `round_robin`                    |
+
+#### 合并模式
+
+当 `SEARCH_SOURCE_MODE=combined` 时：
+- 需要同时配置 **Tavily 和 Brave** 的有效 API 密钥
+- 并行执行查询以最小化延迟
+- 按 URL 合并和去重结果
+- **注意**：每次搜索请求会消耗**两个**提供商的配额（2 倍成本）
+- **分页**：当 `offset>0` 时，仅返回 Brave 结果（Tavily 不支持 offset）
 
 ### Tavily 配置
 

@@ -4,6 +4,9 @@ import { D1Client } from '../db/d1.js';
 import { selectTavilyKey, selectBraveKey, markTavilyKeyCooldown, markTavilyKeyInvalid, markBraveKeyInvalid } from '../services/keyPool.js';
 import { tavilySearch, tavilyExtract, tavilyCrawl, tavilyMap, tavilyResearch, TavilyError } from '../services/tavilyClient.js';
 import { braveWebSearch, braveLocalSearch, BraveError } from '../services/braveClient.js';
+import { parseSearchSourceMode } from './searchSource.js';
+import { extractBraveWebResults, extractBraveLocalResults } from './braveFormat.js';
+import { mergeAndDedupe } from './combinedMerge.js';
 
 interface JsonRpcRequest {
   jsonrpc: '2.0';
@@ -175,37 +178,258 @@ async function handleBraveTool(
   c: Context<{ Bindings: Env }>,
   toolName: string,
   args: Record<string, unknown>
-): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
+): Promise<{ content: Array<{ type: 'text'; text: string }>; isError?: boolean }> {
   const db = new D1Client(c.env.DB);
-  const keyInfo = await selectBraveKey(db, c.env.KEY_ENCRYPTION_SECRET);
 
-  if (!keyInfo) {
+  // Get search source mode
+  const settings = await db.getServerSettings();
+  const dbMode = settings.find(s => s.key === 'searchSourceMode')?.value;
+  const searchSourceMode = parseSearchSourceMode(dbMode || c.env.SEARCH_SOURCE_MODE, 'brave_prefer_tavily_fallback');
+
+  const query = String(args.query ?? '');
+  const count = typeof args.count === 'number' ? args.count : 10;
+  const offset = typeof args.offset === 'number' ? args.offset : 0;
+
+  // Handle tavily_only mode
+  if (searchSourceMode === 'tavily_only') {
+    const tavilyKeyInfo = await selectTavilyKey(db, c.env.KEY_ENCRYPTION_SECRET);
+    if (!tavilyKeyInfo) {
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ error: 'No Tavily API keys configured' }) }],
+        isError: true
+      };
+    }
+
+    try {
+      const result = await tavilySearch(tavilyKeyInfo.apiKey, { query, max_results: count });
+      const formatted = (result.results || []).map((r: any) => ({
+        title: String(r?.title ?? ''),
+        url: String(r?.url ?? ''),
+        description: String(r?.content ?? '') || undefined
+      }));
+      return {
+        content: [{ type: 'text', text: JSON.stringify(formatted, null, 2) }]
+      };
+    } catch (error) {
+      if (error instanceof TavilyError) {
+        if (error.status === 401 || error.status === 403) {
+          await markTavilyKeyInvalid(db, tavilyKeyInfo.keyId);
+        } else if (error.status === 429) {
+          await markTavilyKeyCooldown(db, tavilyKeyInfo.keyId, 60000);
+        }
+      }
+      throw error;
+    }
+  }
+
+  // Handle brave_only mode
+  if (searchSourceMode === 'brave_only') {
+    const braveKeyInfo = await selectBraveKey(db, c.env.KEY_ENCRYPTION_SECRET);
+    if (!braveKeyInfo) {
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ error: 'Brave Search is not configured. Please add a Brave API key.' }) }],
+        isError: true
+      };
+    }
+
+    try {
+      const result = toolName === 'brave_web_search'
+        ? await braveWebSearch(braveKeyInfo.apiKey, args as any)
+        : await braveLocalSearch(braveKeyInfo.apiKey, args as any);
+
+      const formatted = toolName === 'brave_web_search'
+        ? extractBraveWebResults(result)
+        : extractBraveLocalResults(result);
+
+      return {
+        content: [{ type: 'text', text: JSON.stringify(formatted, null, 2) }]
+      };
+    } catch (error) {
+      if (error instanceof BraveError) {
+        if (error.status === 401 || error.status === 403) {
+          await markBraveKeyInvalid(db, braveKeyInfo.keyId);
+        }
+      }
+      throw error;
+    }
+  }
+
+  // Handle combined mode
+  if (searchSourceMode === 'combined') {
+    // If offset > 0, only use Brave (Tavily doesn't support offset)
+    if (offset > 0) {
+      const braveKeyInfo = await selectBraveKey(db, c.env.KEY_ENCRYPTION_SECRET);
+      if (!braveKeyInfo) {
+        return {
+          content: [{ type: 'text', text: JSON.stringify({ error: 'Brave Search is not configured for pagination.' }) }],
+          isError: true
+        };
+      }
+
+      try {
+        const result = toolName === 'brave_web_search'
+          ? await braveWebSearch(braveKeyInfo.apiKey, args as any)
+          : await braveLocalSearch(braveKeyInfo.apiKey, args as any);
+
+        const formatted = toolName === 'brave_web_search'
+          ? extractBraveWebResults(result)
+          : extractBraveLocalResults(result);
+
+        return {
+          content: [{ type: 'text', text: JSON.stringify(formatted, null, 2) }]
+        };
+      } catch (error) {
+        if (error instanceof BraveError && (error.status === 401 || error.status === 403)) {
+          await markBraveKeyInvalid(db, braveKeyInfo.keyId);
+        }
+        throw error;
+      }
+    }
+
+    // Combined mode: call both in parallel
+    const promises: Promise<{ source: 'tavily' | 'brave'; results: any[]; error?: any }>[] = [];
+
+    // Tavily
+    const tavilyKeyInfo = await selectTavilyKey(db, c.env.KEY_ENCRYPTION_SECRET);
+    if (tavilyKeyInfo) {
+      promises.push(
+        tavilySearch(tavilyKeyInfo.apiKey, { query, max_results: count })
+          .then(res => ({
+            source: 'tavily' as const,
+            results: (res.results || []).map((r: any) => ({
+              title: String(r?.title ?? ''),
+              url: String(r?.url ?? ''),
+              description: String(r?.content ?? '') || undefined
+            }))
+          }))
+          .catch(err => ({ source: 'tavily' as const, results: [], error: err }))
+      );
+    }
+
+    // Brave
+    const braveKeyInfo = await selectBraveKey(db, c.env.KEY_ENCRYPTION_SECRET);
+    if (braveKeyInfo) {
+      promises.push(
+        (toolName === 'brave_web_search'
+          ? braveWebSearch(braveKeyInfo.apiKey, args as any)
+          : braveLocalSearch(braveKeyInfo.apiKey, args as any)
+        )
+          .then(res => ({
+            source: 'brave' as const,
+            results: toolName === 'brave_web_search'
+              ? extractBraveWebResults(res)
+              : extractBraveLocalResults(res)
+          }))
+          .catch(err => ({ source: 'brave' as const, results: [], error: err }))
+      );
+    }
+
+    const settled = await Promise.allSettled(promises);
+
+    // Extract results
+    const tavilyResult = settled[0]?.status === 'fulfilled' ? settled[0].value : { source: 'tavily' as const, results: [], error: settled[0]?.reason };
+    const braveResult = settled[1]?.status === 'fulfilled' ? settled[1].value : (settled[1] ? { source: 'brave' as const, results: [], error: settled[1].reason } : null);
+
+    const tavilyFailed = tavilyResult?.error !== undefined;
+    const braveFailed = braveResult?.error !== undefined;
+
+    // If both failed, return error
+    if (tavilyFailed && braveFailed) {
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ error: 'Both Tavily and Brave search failed.' }) }],
+        isError: true
+      };
+    }
+
+    // Merge and deduplicate
+    const merged = mergeAndDedupe({
+      tavily: tavilyResult?.results ?? [],
+      brave: braveResult?.results ?? [],
+      count
+    });
+
     return {
-      content: [{ type: 'text', text: 'Error: No Brave API keys configured. Please add keys in the Admin UI.' }],
+      content: [{ type: 'text', text: JSON.stringify(merged, null, 2) }]
     };
   }
 
-  try {
-    let result: unknown;
+  // Default: brave_prefer_tavily_fallback
+  const braveKeyInfo = await selectBraveKey(db, c.env.KEY_ENCRYPTION_SECRET);
 
-    switch (toolName) {
-      case 'brave_web_search':
-        result = await braveWebSearch(keyInfo.apiKey, args as any);
-        break;
-      case 'brave_local_search':
-        result = await braveLocalSearch(keyInfo.apiKey, args as any);
-        break;
-      default:
-        throw new Error(`Unknown Brave tool: ${toolName}`);
+  // If no Brave key, use Tavily
+  if (!braveKeyInfo) {
+    const tavilyKeyInfo = await selectTavilyKey(db, c.env.KEY_ENCRYPTION_SECRET);
+    if (!tavilyKeyInfo) {
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ error: 'No API keys configured' }) }],
+        isError: true
+      };
     }
 
+    try {
+      const result = await tavilySearch(tavilyKeyInfo.apiKey, { query, max_results: count });
+      const formatted = (result.results || []).map((r: any) => ({
+        title: String(r?.title ?? ''),
+        url: String(r?.url ?? ''),
+        description: String(r?.content ?? '') || undefined
+      }));
+      return {
+        content: [{ type: 'text', text: JSON.stringify(formatted, null, 2) }]
+      };
+    } catch (error) {
+      if (error instanceof TavilyError) {
+        if (error.status === 401 || error.status === 403) {
+          await markTavilyKeyInvalid(db, tavilyKeyInfo.keyId);
+        } else if (error.status === 429) {
+          await markTavilyKeyCooldown(db, tavilyKeyInfo.keyId, 60000);
+        }
+      }
+      throw error;
+    }
+  }
+
+  // Try Brave first
+  try {
+    const result = toolName === 'brave_web_search'
+      ? await braveWebSearch(braveKeyInfo.apiKey, args as any)
+      : await braveLocalSearch(braveKeyInfo.apiKey, args as any);
+
+    const formatted = toolName === 'brave_web_search'
+      ? extractBraveWebResults(result)
+      : extractBraveLocalResults(result);
+
     return {
-      content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+      content: [{ type: 'text', text: JSON.stringify(formatted, null, 2) }]
     };
   } catch (error) {
     if (error instanceof BraveError) {
       if (error.status === 401 || error.status === 403) {
-        await markBraveKeyInvalid(db, keyInfo.keyId);
+        await markBraveKeyInvalid(db, braveKeyInfo.keyId);
+      }
+
+      // Fallback to Tavily on error
+      const tavilyKeyInfo = await selectTavilyKey(db, c.env.KEY_ENCRYPTION_SECRET);
+      if (tavilyKeyInfo) {
+        try {
+          const result = await tavilySearch(tavilyKeyInfo.apiKey, { query, max_results: count });
+          const formatted = (result.results || []).map((r: any) => ({
+            title: String(r?.title ?? ''),
+            url: String(r?.url ?? ''),
+            description: String(r?.content ?? '') || undefined
+          }));
+          return {
+            content: [{ type: 'text', text: JSON.stringify(formatted, null, 2) }]
+          };
+        } catch (tavilyError) {
+          if (tavilyError instanceof TavilyError) {
+            if (tavilyError.status === 401 || tavilyError.status === 403) {
+              await markTavilyKeyInvalid(db, tavilyKeyInfo.keyId);
+            } else if (tavilyError.status === 429) {
+              await markTavilyKeyCooldown(db, tavilyKeyInfo.keyId, 60000);
+            }
+          }
+          // If Tavily also fails, throw original Brave error
+        }
       }
     }
     throw error;

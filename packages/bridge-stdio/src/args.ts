@@ -1,7 +1,9 @@
 import { parseArgs } from 'node:util';
+import type { SearchSourceMode } from '@mcp-nexus/core';
 
 export type StdioCliArgs = {
   token: string;
+  searchSourceMode: SearchSourceMode;
 };
 
 export type ParseStdioCliArgsResult =
@@ -15,7 +17,8 @@ export function parseStdioCliArgs(argv: string[]): ParseStdioCliArgsResult {
     allowPositionals: true,
     options: {
       help: { type: 'boolean', short: 'h' },
-      token: { type: 'string' }
+      token: { type: 'string' },
+      'search-source-mode': { type: 'string' }
     }
   });
 
@@ -36,7 +39,17 @@ export function parseStdioCliArgs(argv: string[]): ParseStdioCliArgsResult {
     };
   }
 
-  return { ok: true, value: { token } };
+  // Parse search source mode (CLI > env > default)
+  const searchSourceModeValue = parsed.values['search-source-mode'];
+  const searchSourceModeFromFlag = typeof searchSourceModeValue === 'string' ? searchSourceModeValue.trim() : '';
+  const searchSourceModeFromEnv = process.env.SEARCH_SOURCE_MODE?.trim() ?? '';
+  const searchSourceModeRaw = searchSourceModeFromFlag || searchSourceModeFromEnv || 'brave_prefer_tavily_fallback';
+
+  // Import parseSearchSourceMode dynamically to avoid circular dependency
+  const { parseSearchSourceMode } = await import('@mcp-nexus/core');
+  const searchSourceMode = parseSearchSourceMode(searchSourceModeRaw, 'brave_prefer_tavily_fallback');
+
+  return { ok: true, value: { token, searchSourceMode } };
 }
 
 export function usage(): string {
@@ -44,11 +57,12 @@ export function usage(): string {
     'mcp-nexus local stdio server',
     '',
     'Usage:',
-    '  node packages/bridge-stdio/dist/index.js [--token <client_token>]',
+    '  node packages/bridge-stdio/dist/index.js [--token <client_token>] [--search-source-mode <mode>]',
     '',
     'Options:',
-    '  --token <client_token>        Client token used to authenticate requests to this server. (Env: TAVILY_BRIDGE_MCP_TOKEN)',
-    '  -h, --help                    Show help.'
+    '  --token <client_token>              Client token used to authenticate requests to this server. (Env: TAVILY_BRIDGE_MCP_TOKEN)',
+    '  --search-source-mode <mode>         Search source mode: tavily_only, brave_only, combined, or brave_prefer_tavily_fallback. (Env: SEARCH_SOURCE_MODE)',
+    '  -h, --help                          Show help.'
   ].join('\n');
 }
 

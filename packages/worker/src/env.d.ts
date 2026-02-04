@@ -24,6 +24,7 @@ export interface Env {
   MCP_RATE_LIMIT_PER_MINUTE: string;
   MCP_GLOBAL_RATE_LIMIT_PER_MINUTE: string;
   TAVILY_KEY_SELECTION_STRATEGY: string;
+  SEARCH_SOURCE_MODE?: string;
   TAVILY_USAGE_LOG_MODE: string;
   BRAVE_USAGE_LOG_MODE: string;
   ENVIRONMENT?: string;

@@ -47,7 +47,9 @@
       "brave_only": "Brave only",
       "combined": "Combined (Tavily + Brave)",
       "brave_prefer_tavily_fallback": "Brave with Tavily fallback",
-      "braveUnavailableWarning": "Warning: Brave Search is not configured. This option will fail."
+      "braveUnavailableWarning": "Warning: Brave Search is not configured. This option will fail.",
+      "combinedUnavailableWarning": "Warning: Combined mode requires active API keys for BOTH Tavily and Brave.",
+      "costNote": "Note: Combined mode queries both APIs in parallel (2x cost per search)."
     }
   },
   "rotation": {

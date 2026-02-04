@@ -301,9 +301,22 @@ export function SettingsPage({
                       </button>
                     </div>
                     <div className="help">{t('server.searchSourceMode.help')}</div>
+
+                    {searchSourceModeDraft === 'combined' && (
+                      <div className="help" style={{ color: 'var(--color-warning)', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                        ⚠️ {t('server.searchSourceMode.costNote')}
+                      </div>
+                    )}
+
                     {searchSourceModeDraft === 'brave_only' && !serverInfo.braveSearchEnabled ? (
                       <div className="badge mono" data-variant="warning">
                         {t('server.searchSourceMode.braveUnavailableWarning')}
+                      </div>
+                    ) : null}
+
+                    {searchSourceModeDraft === 'combined' && !serverInfo.braveSearchEnabled ? (
+                      <div className="badge mono" data-variant="warning">
+                        {t('server.searchSourceMode.combinedUnavailableWarning')}
                       </div>
                     ) : null}
                   </div>

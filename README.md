@@ -104,8 +104,17 @@ These settings can also be configured live in the **Admin UI → Settings** page
 
 | Variable                      | Description                                                                                                                                                                                           | Default                          |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| `SEARCH_SOURCE_MODE`          | Defines the search behavior: `tavily_only`, `brave_only`, `combined` (parallel query), or `brave_prefer_tavily_fallback` (Brave first, then Tavily on error).                                             | `brave_prefer_tavily_fallback`   |
+| `SEARCH_SOURCE_MODE`          | Defines the search behavior: `tavily_only`, `brave_only`, `combined` (parallel query), or `brave_prefer_tavily_fallback` (Brave first, then Tavily on error). **Note**: Combined mode with `offset>0` returns Brave-only results to avoid Tavily duplication. | `brave_prefer_tavily_fallback`   |
 | `TAVILY_KEY_SELECTION_STRATEGY` | Strategy for picking an upstream Tavily key when multiple are active: `round_robin` (default) or `random`.                                                                                              | `round_robin`                    |
+
+#### Combined Mode
+
+When `SEARCH_SOURCE_MODE=combined`:
+- Requires active API keys for **both** Tavily and Brave Search
+- Executes queries in parallel to minimize latency
+- Merges and deduplicates results by URL
+- **Note**: Each search request consumes quota from **both** providers (2x cost)
+- **Pagination**: When `offset>0`, only Brave results are returned (Tavily doesn't support offset)
 
 ### Tavily Configuration
 

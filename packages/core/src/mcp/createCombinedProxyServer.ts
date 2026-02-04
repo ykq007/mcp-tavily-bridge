@@ -216,13 +216,27 @@ async function handleCombinedWebSearch(
   maxResults: number | undefined,
   defaults: Record<string, unknown>
 ): Promise<CallToolResult> {
-  const promises: Promise<{ source: 'tavily' | 'brave'; results: any[] }>[] = [];
+  // Check for pagination offset
+  const offset = typeof (opts.args as any).offset === 'number' ? (opts.args as any).offset : 0;
+
+  // If offset > 0, only use Brave (Tavily doesn't support offset)
+  if (offset > 0) {
+    if (!opts.braveClient) {
+      return toolError('Brave Search is not configured for pagination.');
+    }
+    const maxWaitMs = resolveBraveMaxWaitMs(opts.braveOverflow, opts.braveMaxQueueMs);
+    const response = await opts.braveClient.webSearch(opts.args as any, { defaults, maxWaitMs });
+    return textResult(formatBraveWebResultsV0100(response));
+  }
+
+  // Combined mode: call both in parallel
+  const promises: Promise<{ source: 'tavily' | 'brave'; results: any[]; error?: any }>[] = [];
 
   // Always call Tavily
   promises.push(
     opts.tavilyClient.search({ query, max_results: maxResults }, { defaults })
       .then(res => ({ source: 'tavily' as const, results: res.results ?? [] }))
-      .catch(() => ({ source: 'tavily' as const, results: [] }))
+      .catch(err => ({ source: 'tavily' as const, results: [], error: err }))
   );
 
   // Call Brave if available
@@ -234,30 +248,66 @@ async function handleCombinedWebSearch(
           const webResults = (res as any)?.web?.results ?? (res as any)?.results ?? [];
           return { source: 'brave' as const, results: webResults };
         })
-        .catch(() => ({ source: 'brave' as const, results: [] }))
+        .catch(err => ({ source: 'brave' as const, results: [], error: err }))
     );
   }
 
-  const settled = await Promise.all(promises);
+  const settled = await Promise.allSettled(promises);
 
-  // Merge and deduplicate by URL
+  // Extract results and check for errors
+  const tavilyResult = settled[0].status === 'fulfilled' ? settled[0].value : { source: 'tavily' as const, results: [], error: settled[0].reason };
+  const braveResult = settled[1]?.status === 'fulfilled' ? settled[1].value : (settled[1] ? { source: 'brave' as const, results: [], error: settled[1].reason } : null);
+
+  const tavilyFailed = tavilyResult.error !== undefined;
+  const braveFailed = braveResult?.error !== undefined;
+
+  // If both failed, return error
+  if (tavilyFailed && braveFailed) {
+    return toolError('Both Tavily and Brave search failed.');
+  }
+
+  // Interleave merge and deduplicate by URL
   const seenUrls = new Set<string>();
   const merged: Array<{ title: string; url: string; description?: string }> = [];
 
-  for (const { source, results } of settled) {
-    for (const r of results) {
+  const tavilyData = tavilyResult.results;
+  const braveData = braveResult?.results ?? [];
+
+  const maxLen = Math.max(tavilyData.length, braveData.length);
+  for (let i = 0; i < maxLen; i++) {
+    // Tavily
+    if (i < tavilyData.length) {
+      const r = tavilyData[i];
       const url = String(r?.url ?? '');
-      if (!url || seenUrls.has(url)) continue;
-      seenUrls.add(url);
-      merged.push({
-        title: String(r?.title ?? ''),
-        url,
-        description: String(r?.content ?? r?.description ?? r?.snippet ?? '') || undefined
-      });
+      if (url && !seenUrls.has(url)) {
+        seenUrls.add(url);
+        merged.push({
+          title: String(r?.title ?? ''),
+          url,
+          description: String(r?.content ?? '') || undefined
+        });
+      }
+    }
+
+    // Brave
+    if (i < braveData.length) {
+      const r = braveData[i];
+      const url = String(r?.url ?? '');
+      if (url && !seenUrls.has(url)) {
+        seenUrls.add(url);
+        merged.push({
+          title: String(r?.title ?? ''),
+          url,
+          description: String(r?.description ?? r?.snippet ?? '') || undefined
+        });
+      }
     }
   }
 
-  return textResult(JSON.stringify(merged, null, 2));
+  // Enforce count limit
+  const finalResults = maxResults ? merged.slice(0, maxResults) : merged.slice(0, 10);
+
+  return textResult(JSON.stringify(finalResults, null, 2));
 }
 
 async function handleBraveLocalSearch(opts: {
@@ -332,13 +382,13 @@ async function handleCombinedLocalSearch(
   maxResults: number | undefined,
   defaults: Record<string, unknown>
 ): Promise<CallToolResult> {
-  const promises: Promise<{ source: 'tavily' | 'brave'; results: any[] }>[] = [];
+  const promises: Promise<{ source: 'tavily' | 'brave'; results: any[]; error?: any }>[] = [];
 
   // Always call Tavily
   promises.push(
     opts.tavilyClient.search({ query, max_results: maxResults }, { defaults })
       .then(res => ({ source: 'tavily' as const, results: res.results ?? [] }))
-      .catch(() => ({ source: 'tavily' as const, results: [] }))
+      .catch(err => ({ source: 'tavily' as const, results: [], error: err }))
   );
 
   // Call Brave local search if available
@@ -350,30 +400,66 @@ async function handleCombinedLocalSearch(
           const localResults = (res as any)?.local?.results ?? (res as any)?.results ?? (res as any)?.web?.results ?? [];
           return { source: 'brave' as const, results: localResults };
         })
-        .catch(() => ({ source: 'brave' as const, results: [] }))
+        .catch(err => ({ source: 'brave' as const, results: [], error: err }))
     );
   }
 
-  const settled = await Promise.all(promises);
+  const settled = await Promise.allSettled(promises);
 
-  // Merge and deduplicate by URL
+  // Extract results and check for errors
+  const tavilyResult = settled[0].status === 'fulfilled' ? settled[0].value : { source: 'tavily' as const, results: [], error: settled[0].reason };
+  const braveResult = settled[1]?.status === 'fulfilled' ? settled[1].value : (settled[1] ? { source: 'brave' as const, results: [], error: settled[1].reason } : null);
+
+  const tavilyFailed = tavilyResult.error !== undefined;
+  const braveFailed = braveResult?.error !== undefined;
+
+  // If both failed, return error
+  if (tavilyFailed && braveFailed) {
+    return toolError('Both Tavily and Brave search failed.');
+  }
+
+  // Interleave merge and deduplicate by URL
   const seenUrls = new Set<string>();
   const merged: Array<{ title: string; url: string; description?: string }> = [];
 
-  for (const { source, results } of settled) {
-    for (const r of results) {
+  const tavilyData = tavilyResult.results;
+  const braveData = braveResult?.results ?? [];
+
+  const maxLen = Math.max(tavilyData.length, braveData.length);
+  for (let i = 0; i < maxLen; i++) {
+    // Tavily
+    if (i < tavilyData.length) {
+      const r = tavilyData[i];
+      const url = String(r?.url ?? '');
+      if (url && !seenUrls.has(url)) {
+        seenUrls.add(url);
+        merged.push({
+          title: String(r?.title ?? ''),
+          url,
+          description: String(r?.content ?? '') || undefined
+        });
+      }
+    }
+
+    // Brave
+    if (i < braveData.length) {
+      const r = braveData[i];
       const url = String(r?.url ?? r?.website ?? '');
-      if (!url || seenUrls.has(url)) continue;
-      seenUrls.add(url);
-      merged.push({
-        title: String(r?.title ?? r?.name ?? ''),
-        url,
-        description: String(r?.content ?? r?.description ?? r?.snippet ?? '') || undefined
-      });
+      if (url && !seenUrls.has(url)) {
+        seenUrls.add(url);
+        merged.push({
+          title: String(r?.title ?? r?.name ?? ''),
+          url,
+          description: String(r?.description ?? r?.snippet ?? '') || undefined
+        });
+      }
     }
   }
 
-  return textResult(JSON.stringify(merged, null, 2));
+  // Enforce count limit
+  const finalResults = maxResults ? merged.slice(0, maxResults) : merged.slice(0, 10);
+
+  return textResult(JSON.stringify(finalResults, null, 2));
 }
 
 function resolveBraveMaxWaitMs(mode: BraveOverflowMode, maxQueueMs: number): number | undefined {

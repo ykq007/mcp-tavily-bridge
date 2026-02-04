@@ -47,7 +47,9 @@
       "brave_only": "仅 Brave",
       "combined": "合并模式 (Tavily + Brave)",
       "brave_prefer_tavily_fallback": "Brave 优先，Tavily 备用",
-      "braveUnavailableWarning": "警告：服务器未配置 Brave 搜索。此选项将会失败。"
+      "braveUnavailableWarning": "警告：服务器未配置 Brave 搜索。此选项将会失败。",
+      "combinedUnavailableWarning": "警告：合并模式需要同时配置 Tavily 和 Brave 的 API 密钥。",
+      "costNote": "注意：合并模式会并行查询两个 API（每次搜索消耗 2 倍配额）。"
     }
   },
   "rotation": {

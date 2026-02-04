@@ -4,6 +4,7 @@ import type { Env } from '../../env.js';
 import { adminAuth } from '../../middleware/adminAuth.js';
 import { D1Client, generateId } from '../../db/d1.js';
 import { encrypt, decrypt, maskApiKey, generateToken } from '../../crypto/crypto.js';
+import { parseSearchSourceMode } from '../../mcp/searchSource.js';
 
 // Create admin router
 const adminRouter = new Hono<{ Bindings: Env }>();
@@ -31,7 +32,7 @@ adminRouter.get('/server-info', async (c) => {
 
   return c.json({
     tavilyKeySelectionStrategy: settingsMap.tavilyKeySelectionStrategy || c.env.TAVILY_KEY_SELECTION_STRATEGY || 'round_robin',
-    searchSourceMode: settingsMap.searchSourceMode || 'tavily_only',
+    searchSourceMode: parseSearchSourceMode(settingsMap.searchSourceMode || c.env.SEARCH_SOURCE_MODE, 'brave_prefer_tavily_fallback'),
     braveSearchEnabled: activeBraveKeys > 0,
     runtime: 'cloudflare-workers',
   });

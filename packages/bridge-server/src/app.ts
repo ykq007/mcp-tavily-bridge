@@ -16,6 +16,7 @@ import {
   getDefaultParametersFromEnv,
   parseDefaultParametersJson,
   parseTavilyKeySelectionStrategy,
+  parseSearchSourceMode,
   QueuedRateGate,
   type BraveOverflowMode
 } from '@mcp-nexus/core';
@@ -45,6 +46,7 @@ const GLOBAL_RATE_LIMIT_PER_MINUTE = Number(process.env.MCP_GLOBAL_RATE_LIMIT_PE
 const MAX_RETRIES = Number(process.env.MCP_MAX_RETRIES ?? '2');
 const FIXED_COOLDOWN_MS = Number(process.env.MCP_COOLDOWN_MS ?? String(60_000));
 const FALLBACK_TAVILY_KEY_SELECTION_STRATEGY = parseTavilyKeySelectionStrategy(process.env.TAVILY_KEY_SELECTION_STRATEGY);
+const FALLBACK_SEARCH_SOURCE_MODE = parseSearchSourceMode(process.env.SEARCH_SOURCE_MODE, 'brave_prefer_tavily_fallback');
 
 const BRAVE_API_KEY = process.env.BRAVE_API_KEY?.trim() || undefined;
 const BRAVE_HTTP_TIMEOUT_MS = Number(process.env.BRAVE_HTTP_TIMEOUT_MS ?? String(20_000));
@@ -158,7 +160,11 @@ export function createBridgeApp(options: CreateBridgeAppOptions = {}): express.E
   }
 
   const encryptionKey = parsedKey.key;
-  const serverSettings = new ServerSettings({ prisma, fallbackStrategy: FALLBACK_TAVILY_KEY_SELECTION_STRATEGY });
+  const serverSettings = new ServerSettings({
+    prisma,
+    fallbackStrategy: FALLBACK_TAVILY_KEY_SELECTION_STRATEGY,
+    fallbackSearchSourceMode: FALLBACK_SEARCH_SOURCE_MODE
+  });
   const pool = new TavilyKeyPool({
     prisma,
     encryptionKey,
