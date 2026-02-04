@@ -404,50 +404,104 @@ adminRouter.put('/settings', async (c) => {
 // ============ Usage Logs ============
 
 adminRouter.get('/usage', async (c) => {
-  const limit = parseInt(c.req.query('limit') || '100', 10);
-  const offset = parseInt(c.req.query('offset') || '0', 10);
-  const source = c.req.query('source') || 'all'; // tavily, brave, all
+  const page = parseInt(c.req.query('page') || '1', 10);
+  const limit = Math.min(parseInt(c.req.query('limit') || '50', 10), 200);
+  const toolName = c.req.query('toolName');
+  const outcome = c.req.query('outcome');
+  const clientTokenPrefix = c.req.query('clientTokenPrefix');
+  const queryHash = c.req.query('queryHash');
+  const dateFrom = c.req.query('dateFrom');
+  const dateTo = c.req.query('dateTo');
+  const order = (c.req.query('order') || 'desc') as 'asc' | 'desc';
 
   const db = new D1Client(c.env.DB);
 
-  const results: Array<{
-    id: string;
-    timestamp: string;
-    toolName: string;
-    outcome: string;
-    latencyMs: number | null;
-    source: string;
-  }> = [];
+  // Calculate offset from page
+  const offset = (page - 1) * limit;
 
-  if (source === 'all' || source === 'tavily') {
-    const tavilyLogs = await db.getTavilyUsageLogs(limit, offset);
-    results.push(...tavilyLogs.map(log => ({ ...log, source: 'tavily' })));
+  // Fetch logs with filters
+  const tavilyLogs = await db.getTavilyUsageLogs(limit, offset);
+  const braveLogs = await db.getBraveUsageLogs(limit, offset);
+
+  // Combine and filter results
+  let results = [
+    ...tavilyLogs.map(log => ({ ...log, source: 'tavily' })),
+    ...braveLogs.map(log => ({ ...log, source: 'brave' }))
+  ];
+
+  // Apply filters
+  if (toolName) {
+    results = results.filter(log => log.toolName === toolName);
+  }
+  if (outcome) {
+    results = results.filter(log => log.outcome === outcome);
+  }
+  if (clientTokenPrefix) {
+    results = results.filter(log =>
+      log.clientTokenPrefix && log.clientTokenPrefix.includes(clientTokenPrefix)
+    );
+  }
+  if (queryHash) {
+    results = results.filter(log => log.queryHash === queryHash);
+  }
+  if (dateFrom) {
+    const fromDate = new Date(dateFrom);
+    results = results.filter(log => new Date(log.timestamp) >= fromDate);
+  }
+  if (dateTo) {
+    const toDate = new Date(dateTo);
+    results = results.filter(log => new Date(log.timestamp) <= toDate);
   }
 
-  if (source === 'all' || source === 'brave') {
-    const braveLogs = await db.getBraveUsageLogs(limit, offset);
-    results.push(...braveLogs.map(log => ({ ...log, source: 'brave' })));
-  }
+  // Sort by timestamp
+  results.sort((a, b) => {
+    const timeA = new Date(a.timestamp).getTime();
+    const timeB = new Date(b.timestamp).getTime();
+    return order === 'desc' ? timeB - timeA : timeA - timeB;
+  });
 
-  // Sort combined results by timestamp
-  results.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  // Get total count for pagination
+  const totalItems = results.length;
+  const totalPages = Math.ceil(totalItems / limit);
 
-  return c.json(results.slice(0, limit));
+  // Paginate results
+  const logs = results.slice(0, limit);
+
+  return c.json({
+    logs,
+    pagination: {
+      totalItems,
+      totalPages,
+      currentPage: page,
+      limit
+    }
+  });
 });
 
 adminRouter.get('/usage/summary', async (c) => {
+  const dateFrom = c.req.query('dateFrom');
+  const dateTo = c.req.query('dateTo');
+
   const db = new D1Client(c.env.DB);
 
   // Get all logs and compute summary
   const tavilyLogs = await db.getTavilyUsageLogs(1000, 0);
   const braveLogs = await db.getBraveUsageLogs(1000, 0);
 
-  const allLogs = [...tavilyLogs, ...braveLogs];
+  let allLogs = [...tavilyLogs, ...braveLogs];
+
+  // Apply date filters
+  if (dateFrom) {
+    const fromDate = new Date(dateFrom);
+    allLogs = allLogs.filter(log => new Date(log.timestamp) >= fromDate);
+  }
+  if (dateTo) {
+    const toDate = new Date(dateTo);
+    allLogs = allLogs.filter(log => new Date(log.timestamp) <= toDate);
+  }
 
   // Compute summary stats
-  const totalRequests = allLogs.length;
-  const successCount = allLogs.filter(l => l.outcome === 'success').length;
-  const errorCount = allLogs.filter(l => l.outcome === 'error').length;
+  const total = allLogs.length;
 
   // Tool breakdown
   const toolCounts: Record<string, number> = {};
@@ -455,12 +509,34 @@ adminRouter.get('/usage/summary', async (c) => {
     toolCounts[log.toolName] = (toolCounts[log.toolName] || 0) + 1;
   }
 
+  const byTool = Object.entries(toolCounts)
+    .map(([toolName, count]) => ({ toolName, count }))
+    .sort((a, b) => b.count - a.count);
+
+  // Top queries (group by queryHash)
+  const queryCounts: Record<string, { queryHash: string | null; queryPreview: string | null; count: number }> = {};
+  for (const log of allLogs) {
+    if (log.queryHash) {
+      const key = log.queryHash;
+      if (!queryCounts[key]) {
+        queryCounts[key] = {
+          queryHash: log.queryHash,
+          queryPreview: log.queryPreview || null,
+          count: 0
+        };
+      }
+      queryCounts[key].count++;
+    }
+  }
+
+  const topQueries = Object.values(queryCounts)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 20);
+
   return c.json({
-    totalRequests,
-    successCount,
-    errorCount,
-    successRate: totalRequests > 0 ? (successCount / totalRequests * 100).toFixed(1) : '0',
-    toolBreakdown: toolCounts,
+    total,
+    byTool,
+    topQueries
   });
 });
 

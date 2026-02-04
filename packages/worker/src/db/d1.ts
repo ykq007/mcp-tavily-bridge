@@ -60,6 +60,10 @@ export interface TavilyToolUsage {
   clientTokenId: string;
   clientTokenPrefix: string | null;
   upstreamKeyId: string | null;
+  queryHash: string | null;
+  queryPreview: string | null;
+  argsJson: string;
+  errorMessage: string | null;
 }
 
 export interface BraveToolUsage {
@@ -71,6 +75,10 @@ export interface BraveToolUsage {
   clientTokenId: string;
   clientTokenPrefix: string | null;
   upstreamKeyId: string | null;
+  queryHash: string | null;
+  queryPreview: string | null;
+  argsJson: string;
+  errorMessage: string | null;
 }
 
 /**
@@ -298,7 +306,8 @@ export class D1Client {
   async getTavilyUsageLogs(limit = 100, offset = 0): Promise<TavilyToolUsage[]> {
     const result = await this.db.prepare(`
       SELECT id, timestamp, toolName, outcome, latencyMs,
-             clientTokenId, clientTokenPrefix, upstreamKeyId
+             clientTokenId, clientTokenPrefix, upstreamKeyId,
+             queryHash, queryPreview, argsJson, errorMessage
       FROM TavilyToolUsage
       ORDER BY timestamp DESC
       LIMIT ? OFFSET ?
@@ -309,7 +318,8 @@ export class D1Client {
   async getBraveUsageLogs(limit = 100, offset = 0): Promise<BraveToolUsage[]> {
     const result = await this.db.prepare(`
       SELECT id, timestamp, toolName, outcome, latencyMs,
-             clientTokenId, clientTokenPrefix, upstreamKeyId
+             clientTokenId, clientTokenPrefix, upstreamKeyId,
+             queryHash, queryPreview, argsJson, errorMessage
       FROM BraveToolUsage
       ORDER BY timestamp DESC
       LIMIT ? OFFSET ?
