@@ -82,27 +82,50 @@ adminRouter.get('/keys', async (c) => {
 });
 
 adminRouter.post('/keys', async (c) => {
-  const body = await c.req.json<{ label: string; apiKey: string }>();
-  const { label, apiKey } = body;
+  try {
+    const body = await c.req.json<{ label: string; apiKey: string }>();
+    const { label, apiKey } = body;
 
-  if (!label || !apiKey) {
-    return c.json({ error: 'label and apiKey are required' }, 400);
+    if (!label || !apiKey) {
+      return c.json({ error: 'label and apiKey are required' }, 400);
+    }
+
+    const db = new D1Client(c.env.DB);
+
+    // Encrypt the key
+    let keyEncrypted: Uint8Array;
+    try {
+      keyEncrypted = await encrypt(apiKey, c.env.KEY_ENCRYPTION_SECRET);
+    } catch (encryptError) {
+      console.error('Encryption failed for /keys:', encryptError);
+      return c.json({ 
+        error: 'Failed to encrypt API key. Please check KEY_ENCRYPTION_SECRET configuration.' 
+      }, 500);
+    }
+
+    const keyMasked = maskApiKey(apiKey);
+    const id = generateId();
+
+    try {
+      await db.createTavilyKey({
+        id,
+        label,
+        keyEncrypted: keyEncrypted.buffer as ArrayBuffer,
+        keyMasked,
+      });
+    } catch (dbError: any) {
+      console.error('Database error for /keys:', dbError);
+      if (dbError.message && dbError.message.includes('UNIQUE constraint failed')) {
+        return c.json({ error: 'A key with this label already exists' }, 409);
+      }
+      return c.json({ error: 'Failed to save key to database' }, 500);
+    }
+
+    return c.json({ id, label, keyMasked, status: 'active' }, 201);
+  } catch (error) {
+    console.error('Unexpected error in POST /keys:', error);
+    return c.json({ error: 'Internal Server Error' }, 500);
   }
-
-  const db = new D1Client(c.env.DB);
-
-  const keyEncrypted = await encrypt(apiKey, c.env.KEY_ENCRYPTION_SECRET);
-  const keyMasked = maskApiKey(apiKey);
-  const id = generateId();
-
-  await db.createTavilyKey({
-    id,
-    label,
-    keyEncrypted: keyEncrypted.buffer as ArrayBuffer,
-    keyMasked,
-  });
-
-  return c.json({ id, label, keyMasked, status: 'active' }, 201);
 });
 
 adminRouter.patch('/keys/:id', async (c) => {
@@ -137,6 +160,7 @@ adminRouter.get('/keys/:id/reveal', async (c) => {
     const apiKey = await decrypt(keyEncrypted, c.env.KEY_ENCRYPTION_SECRET);
     return c.json({ apiKey });
   } catch (error) {
+    console.error(`Failed to decrypt Tavily key ${id}:`, error);
     return c.json({ error: 'Failed to decrypt key' }, 500);
   }
 });
@@ -172,33 +196,55 @@ adminRouter.get('/tavily-keys', async (c) => {
 });
 
 adminRouter.post('/tavily-keys', async (c) => {
-  const body = await c.req.json<{ label: string; key: string }>();
-  const { label, key } = body;
+  try {
+    const body = await c.req.json<{ label: string; key: string }>();
+    const { label, key } = body;
 
-  if (!label || !key) {
-    return c.json({ error: 'label and key are required' }, 400);
+    if (!label || !key) {
+      return c.json({ error: 'label and key are required' }, 400);
+    }
+
+    const db = new D1Client(c.env.DB);
+
+    // Encrypt the key
+    let keyEncrypted: Uint8Array;
+    try {
+      keyEncrypted = await encrypt(key, c.env.KEY_ENCRYPTION_SECRET);
+    } catch (encryptError) {
+      console.error('Encryption failed for /tavily-keys:', encryptError);
+      return c.json({ 
+        error: 'Failed to encrypt API key. Please check KEY_ENCRYPTION_SECRET configuration.' 
+      }, 500);
+    }
+
+    const keyMasked = maskApiKey(key);
+    const id = generateId();
+
+    try {
+      await db.createTavilyKey({
+        id,
+        label,
+        keyEncrypted: keyEncrypted.buffer as ArrayBuffer,
+        keyMasked,
+      });
+    } catch (dbError: any) {
+      console.error('Database error for /tavily-keys:', dbError);
+      if (dbError.message && dbError.message.includes('UNIQUE constraint failed')) {
+        return c.json({ error: 'A key with this label already exists' }, 409);
+      }
+      return c.json({ error: 'Failed to save key to database' }, 500);
+    }
+
+    return c.json({
+      id,
+      label,
+      keyMasked,
+      status: 'active',
+    }, 201);
+  } catch (error) {
+    console.error('Unexpected error in POST /tavily-keys:', error);
+    return c.json({ error: 'Internal Server Error' }, 500);
   }
-
-  const db = new D1Client(c.env.DB);
-
-  // Encrypt the key
-  const keyEncrypted = await encrypt(key, c.env.KEY_ENCRYPTION_SECRET);
-  const keyMasked = maskApiKey(key);
-  const id = generateId();
-
-  await db.createTavilyKey({
-    id,
-    label,
-    keyEncrypted: keyEncrypted.buffer as ArrayBuffer,
-    keyMasked,
-  });
-
-  return c.json({
-    id,
-    label,
-    keyMasked,
-    status: 'active',
-  }, 201);
 });
 
 adminRouter.put('/tavily-keys/:id', async (c) => {
@@ -246,32 +292,55 @@ adminRouter.get('/brave-keys', async (c) => {
 });
 
 adminRouter.post('/brave-keys', async (c) => {
-  const body = await c.req.json<{ label: string; key: string }>();
-  const { label, key } = body;
+  try {
+    const body = await c.req.json<{ label: string; key: string }>();
+    const { label, key } = body;
 
-  if (!label || !key) {
-    return c.json({ error: 'label and key are required' }, 400);
+    if (!label || !key) {
+      return c.json({ error: 'label and key are required' }, 400);
+    }
+
+    const db = new D1Client(c.env.DB);
+
+    // Encrypt the key
+    let keyEncrypted: Uint8Array;
+    try {
+      keyEncrypted = await encrypt(key, c.env.KEY_ENCRYPTION_SECRET);
+    } catch (encryptError) {
+      console.error('Encryption failed for /brave-keys:', encryptError);
+      return c.json({ 
+        error: 'Failed to encrypt API key. Please check KEY_ENCRYPTION_SECRET configuration.' 
+      }, 500);
+    }
+
+    const keyMasked = maskApiKey(key);
+    const id = generateId();
+
+    try {
+      await db.createBraveKey({
+        id,
+        label,
+        keyEncrypted: keyEncrypted.buffer as ArrayBuffer,
+        keyMasked,
+      });
+    } catch (dbError: any) {
+      console.error('Database error for /brave-keys:', dbError);
+      if (dbError.message && dbError.message.includes('UNIQUE constraint failed')) {
+        return c.json({ error: 'A key with this label already exists' }, 409);
+      }
+      return c.json({ error: 'Failed to save key to database' }, 500);
+    }
+
+    return c.json({
+      id,
+      label,
+      keyMasked,
+      status: 'active',
+    }, 201);
+  } catch (error) {
+    console.error('Unexpected error in POST /brave-keys:', error);
+    return c.json({ error: 'Internal Server Error' }, 500);
   }
-
-  const db = new D1Client(c.env.DB);
-
-  const keyEncrypted = await encrypt(key, c.env.KEY_ENCRYPTION_SECRET);
-  const keyMasked = maskApiKey(key);
-  const id = generateId();
-
-  await db.createBraveKey({
-    id,
-    label,
-    keyEncrypted: keyEncrypted.buffer as ArrayBuffer,
-    keyMasked,
-  });
-
-  return c.json({
-    id,
-    label,
-    keyMasked,
-    status: 'active',
-  }, 201);
 });
 
 adminRouter.delete('/brave-keys/:id', async (c) => {
@@ -305,6 +374,7 @@ adminRouter.get('/brave-keys/:id/reveal', async (c) => {
     const apiKey = await decrypt(keyEncrypted, c.env.KEY_ENCRYPTION_SECRET);
     return c.json({ apiKey });
   } catch (error) {
+    console.error(`Failed to decrypt Brave key ${id}:`, error);
     return c.json({ error: 'Failed to decrypt key' }, 500);
   }
 });

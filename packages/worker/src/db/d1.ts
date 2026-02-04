@@ -133,12 +133,17 @@ export class D1Client {
     label: string;
     keyEncrypted: ArrayBuffer;
     keyMasked: string;
+    status?: string;
+    cooldownUntil?: string | null;
   }): Promise<void> {
     const now = new Date().toISOString();
+    const status = data.status || 'active';
+    const cooldownUntil = data.cooldownUntil || null;
+
     await this.db.prepare(`
-      INSERT INTO TavilyKey (id, label, keyEncrypted, keyMasked, status, failureScore, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, 'active', 0, ?, ?)
-    `).bind(data.id, data.label, data.keyEncrypted, data.keyMasked, now, now).run();
+      INSERT INTO TavilyKey (id, label, keyEncrypted, keyMasked, status, cooldownUntil, failureScore, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
+    `).bind(data.id, data.label, data.keyEncrypted, data.keyMasked, status, cooldownUntil, now, now).run();
   }
 
   async updateTavilyKey(id: string, data: Partial<TavilyKey>): Promise<void> {
@@ -209,12 +214,15 @@ export class D1Client {
     label: string;
     keyEncrypted: ArrayBuffer;
     keyMasked: string;
+    status?: string;
   }): Promise<void> {
     const now = new Date().toISOString();
+    const status = data.status || 'active';
+
     await this.db.prepare(`
       INSERT INTO BraveKey (id, label, keyEncrypted, keyMasked, status, failureScore, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, 'active', 0, ?, ?)
-    `).bind(data.id, data.label, data.keyEncrypted, data.keyMasked, now, now).run();
+      VALUES (?, ?, ?, ?, ?, 0, ?, ?)
+    `).bind(data.id, data.label, data.keyEncrypted, data.keyMasked, status, now, now).run();
   }
 
   async updateBraveKey(id: string, data: Partial<BraveKey>): Promise<void> {
