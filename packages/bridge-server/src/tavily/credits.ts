@@ -15,30 +15,60 @@ export type TavilyCreditsSnapshot = {
   raw: unknown;
 };
 
-export async function fetchTavilyCredits(apiKey: string, opts: { timeoutMs: number }): Promise<TavilyCreditsSnapshot> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), Math.max(1, opts.timeoutMs));
-  try {
-    const res = await fetch('https://api.tavily.com/usage', {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${apiKey}` },
-      signal: controller.signal
-    });
+export async function fetchTavilyCredits(
+  apiKey: string,
+  opts: { timeoutMs: number; maxRetries?: number; retryDelayMs?: number }
+): Promise<TavilyCreditsSnapshot> {
+  const maxRetries = opts.maxRetries ?? 3;
+  const baseRetryDelayMs = opts.retryDelayMs ?? 1000;
 
-    const text = await res.text();
-    const body = safeJson(text);
+  let lastError: Error | undefined;
 
-    if (!res.ok) {
-      if (res.status === 401) throw new Error('Invalid API key');
-      if (res.status === 429) throw new Error('Usage limit exceeded');
-      const message = typeof (body as any)?.message === 'string' ? (body as any).message : res.statusText;
-      throw new TavilyHttpError(`HTTP ${res.status}`, { status: res.status, tavilyMessage: message });
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), Math.max(1, opts.timeoutMs));
+
+    try {
+      const res = await fetch('https://api.tavily.com/usage', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${apiKey}` },
+        signal: controller.signal
+      });
+
+      const text = await res.text();
+      const body = safeJson(text);
+
+      if (!res.ok) {
+        if (res.status === 401) throw new Error('Invalid API key');
+        if (res.status === 429) throw new Error('Usage limit exceeded');
+        const message = typeof (body as any)?.message === 'string' ? (body as any).message : res.statusText;
+        throw new TavilyHttpError(`HTTP ${res.status}`, { status: res.status, tavilyMessage: message });
+      }
+
+      return parseUsage(body);
+    } catch (err) {
+      clearTimeout(timer);
+      lastError = err instanceof Error ? err : new Error(String(err));
+
+      // Don't retry on auth errors or usage limits
+      if (lastError.message === 'Invalid API key' || lastError.message === 'Usage limit exceeded') {
+        throw lastError;
+      }
+
+      // If this was the last attempt, throw the error
+      if (attempt === maxRetries) {
+        throw lastError;
+      }
+
+      // Exponential backoff with jitter
+      const delayMs = baseRetryDelayMs * Math.pow(2, attempt) + Math.random() * 500;
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    } finally {
+      clearTimeout(timer);
     }
-
-    return parseUsage(body);
-  } finally {
-    clearTimeout(timer);
   }
+
+  throw lastError ?? new Error('Failed to fetch credits after retries');
 }
 
 export async function tryAcquireCreditsRefreshLock(prisma: PrismaClient, keyId: string, lockMs: number): Promise<string | null> {

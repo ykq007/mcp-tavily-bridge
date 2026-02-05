@@ -9,6 +9,8 @@ const CREDITS_MIN_REMAINING = Number(process.env.TAVILY_CREDITS_MIN_REMAINING ??
 const CREDITS_COOLDOWN_MS = Number(process.env.TAVILY_CREDITS_COOLDOWN_MS ?? String(5 * 60_000));
 const CREDITS_REFRESH_LOCK_MS = Number(process.env.TAVILY_CREDITS_REFRESH_LOCK_MS ?? String(15_000));
 const CREDITS_REFRESH_TIMEOUT_MS = Number(process.env.TAVILY_CREDITS_REFRESH_TIMEOUT_MS ?? String(5_000));
+const CREDITS_REFRESH_MAX_RETRIES = Number(process.env.TAVILY_CREDITS_REFRESH_MAX_RETRIES ?? '3');
+const CREDITS_REFRESH_RETRY_DELAY_MS = Number(process.env.TAVILY_CREDITS_REFRESH_RETRY_DELAY_MS ?? '1000');
 
 type EligibleKey = TavilyKey & { apiKey: string };
 
@@ -172,7 +174,11 @@ export class TavilyKeyPool {
 
     try {
       const apiKey = decryptAes256Gcm(Buffer.from(key.keyEncrypted), this.encryptionKey);
-      const snapshot = await fetchTavilyCredits(apiKey, { timeoutMs: CREDITS_REFRESH_TIMEOUT_MS });
+      const snapshot = await fetchTavilyCredits(apiKey, {
+        timeoutMs: CREDITS_REFRESH_TIMEOUT_MS,
+        maxRetries: CREDITS_REFRESH_MAX_RETRIES,
+        retryDelayMs: CREDITS_REFRESH_RETRY_DELAY_MS
+      });
 
       const expiresAt = new Date(now.getTime() + Math.max(1, CREDITS_TTL_MS));
       const remaining = snapshot.remaining;

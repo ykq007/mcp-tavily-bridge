@@ -62,8 +62,9 @@ export function registerAdminRoutes(
   const requireAdmin = requireAdminToken();
   const parsedKey = tryParseAes256GcmKeyFromEnv('KEY_ENCRYPTION_SECRET');
   if (!parsedKey.ok) {
+    const errorMsg = parsedKey.error;
     app.use(basePath, requireAdmin, (_req, res) => {
-      res.status(500).json({ error: `Server misconfigured: ${parsedKey.error}` });
+      res.status(500).json({ error: `Server misconfigured: ${errorMsg}` });
     });
     return;
   }
@@ -146,8 +147,9 @@ export function registerAdminRoutes(
     const limitKey = `key.reveal:${ip ?? 'unknown'}`;
     const check = revealLimiter.check(limitKey);
     if (!check.ok) {
+      const retryAfter = check.retryAfterMs;
       res.setHeader('Cache-Control', 'no-store');
-      res.status(429).json({ error: 'Rate limit exceeded', retryAfterMs: check.retryAfterMs });
+      res.status(429).json({ error: 'Rate limit exceeded', retryAfterMs: retryAfter });
       return;
     }
 
@@ -268,7 +270,11 @@ export function registerAdminRoutes(
       }
 
       const apiKey = decryptAes256Gcm(Buffer.from(key.keyEncrypted), encryptionKey);
-      const snapshot = await fetchTavilyCredits(apiKey, { timeoutMs });
+      const snapshot = await fetchTavilyCredits(apiKey, {
+        timeoutMs,
+        maxRetries: 3,
+        retryDelayMs: 1000
+      });
 
       const expiresAt = new Date(now.getTime() + ttlMs);
       const remaining = snapshot.remaining;
@@ -354,7 +360,11 @@ export function registerAdminRoutes(
 
         try {
           const apiKey = decryptAes256Gcm(Buffer.from(key.keyEncrypted), encryptionKey);
-          const snapshot = await fetchTavilyCredits(apiKey, { timeoutMs });
+          const snapshot = await fetchTavilyCredits(apiKey, {
+            timeoutMs,
+            maxRetries: 3,
+            retryDelayMs: 1000
+          });
 
           const expiresAt = new Date(now.getTime() + ttlMs);
           const remaining = snapshot.remaining;
@@ -455,8 +465,9 @@ export function registerAdminRoutes(
     const limitKey = `brave-key.reveal:${ip ?? 'unknown'}`;
     const check = revealLimiter.check(limitKey);
     if (!check.ok) {
+      const retryAfter = check.retryAfterMs;
       res.setHeader('Cache-Control', 'no-store');
-      res.status(429).json({ error: 'Rate limit exceeded', retryAfterMs: check.retryAfterMs });
+      res.status(429).json({ error: 'Rate limit exceeded', retryAfterMs: retryAfter });
       return;
     }
 
