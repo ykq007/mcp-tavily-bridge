@@ -285,7 +285,7 @@ export function createBridgeApp(options: CreateBridgeAppOptions = {}): express.E
               tavilyClient,
               braveClient,
               braveOverflow: BRAVE_OVERFLOW,
-              braveMaxQueueMs,
+              braveMaxQueueMs: BRAVE_MAX_QUEUE_MS,
               getDefaultParameters: () => {
                 const envDefaults = getDefaultParametersFromEnv();
                 const headerDefaults = parseDefaultParametersJson(defaultParametersHeader);

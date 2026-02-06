@@ -1,6 +1,10 @@
 import { DurableObject } from 'cloudflare:workers';
 
 import type { Env } from '../env.js';
+import { D1Client } from '../db/d1.js';
+import { selectTavilyKey, selectBraveKey } from '../services/keyPool.js';
+import { tavilySearch, tavilyExtract, tavilyCrawl, tavilyMap, tavilyResearch } from '../services/tavilyClient.js';
+import { braveWebSearch, braveLocalSearch } from '../services/braveClient.js';
 
 /**
  * McpSession Durable Object
@@ -128,15 +132,42 @@ export class McpSession extends DurableObject<Env> {
    * Call Tavily API with the given endpoint and arguments
    */
   private async callTavilyApi(endpoint: string, args: Record<string, unknown>): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
-    // TODO: Get API key from database via key pool
-    // For now, return a placeholder indicating the endpoint would be called
     try {
-      // In production, this would fetch from Tavily API
+      const db = new D1Client(this.env.DB);
+      const encryptionSecret = this.env.KEY_ENCRYPTION_SECRET;
+
+      if (!encryptionSecret) {
+        return {
+          content: [{ type: 'text', text: 'Error: ENCRYPTION_SECRET not configured' }],
+        };
+      }
+
+      const keyData = await selectTavilyKey(db, encryptionSecret);
+      if (!keyData) {
+        return {
+          content: [{ type: 'text', text: 'Error: No active Tavily API keys available. Please configure keys in Admin UI.' }],
+        };
+      }
+
+      let result;
+      if (endpoint === '/search') {
+        result = await tavilySearch(keyData.apiKey, args as any);
+      } else if (endpoint === '/extract') {
+        result = await tavilyExtract(keyData.apiKey, args as any);
+      } else if (endpoint === '/crawl') {
+        result = await tavilyCrawl(keyData.apiKey, args as any);
+      } else if (endpoint === '/map') {
+        result = await tavilyMap(keyData.apiKey, args as any);
+      } else if (endpoint === '/research') {
+        result = await tavilyResearch(keyData.apiKey, args as any);
+      } else {
+        return {
+          content: [{ type: 'text', text: `Error: Unknown Tavily endpoint: ${endpoint}` }],
+        };
+      }
+
       return {
-        content: [{
-          type: 'text',
-          text: `Tavily ${endpoint} would be called with: ${JSON.stringify(args, null, 2)}\n\nNote: API key integration pending - configure keys in Admin UI.`,
-        }],
+        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -150,13 +181,36 @@ export class McpSession extends DurableObject<Env> {
    * Call Brave API with the given endpoint and arguments
    */
   private async callBraveApi(endpoint: string, args: Record<string, unknown>): Promise<{ content: Array<{ type: 'text'; text: string }> }> {
-    // TODO: Get API key from database via key pool
     try {
+      const db = new D1Client(this.env.DB);
+      const encryptionSecret = this.env.KEY_ENCRYPTION_SECRET;
+
+      if (!encryptionSecret) {
+        return {
+          content: [{ type: 'text', text: 'Error: ENCRYPTION_SECRET not configured' }],
+        };
+      }
+
+      const keyData = await selectBraveKey(db, encryptionSecret);
+      if (!keyData) {
+        return {
+          content: [{ type: 'text', text: 'Error: No active Brave API keys available. Please configure keys in Admin UI.' }],
+        };
+      }
+
+      let result;
+      if (endpoint === '/web/search') {
+        result = await braveWebSearch(keyData.apiKey, args as any);
+      } else if (endpoint === '/local/search') {
+        result = await braveLocalSearch(keyData.apiKey, args as any);
+      } else {
+        return {
+          content: [{ type: 'text', text: `Error: Unknown Brave endpoint: ${endpoint}` }],
+        };
+      }
+
       return {
-        content: [{
-          type: 'text',
-          text: `Brave ${endpoint} would be called with: ${JSON.stringify(args, null, 2)}\n\nNote: API key integration pending - configure keys in Admin UI.`,
-        }],
+        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';

@@ -217,8 +217,8 @@ export class RotatingTavilyClient implements TavilyClient {
 }
 
 function applyDefaults(target: Record<string, unknown>, defaults: Record<string, unknown>): Record<string, unknown> {
-  for (const key of Object.keys(target)) {
-    if (key in defaults) target[key] = defaults[key] as any;
+  for (const key of Object.keys(defaults)) {
+    if (!(key in target)) target[key] = defaults[key] as any;
   }
   return target;
 }
