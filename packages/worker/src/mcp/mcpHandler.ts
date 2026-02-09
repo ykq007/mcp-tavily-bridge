@@ -71,7 +71,11 @@ async function enforceMcpRateLimits(
   clientTokenId: string
 ): Promise<RateLimitCheckResult> {
   const globalLimit = parsePositiveInt(c.env.MCP_GLOBAL_RATE_LIMIT_PER_MINUTE, 600);
-  const perClientLimit = parsePositiveInt(c.env.MCP_RATE_LIMIT_PER_MINUTE, 60);
+  const defaultPerClientLimit = parsePositiveInt(c.env.MCP_RATE_LIMIT_PER_MINUTE, 60);
+
+  // Phase 3.5: Use per-token rate limit if set, otherwise use global default
+  const tokenRateLimit = c.get('clientTokenRateLimit') as number | null | undefined;
+  const perClientLimit = tokenRateLimit ?? defaultPerClientLimit;
 
   const clientCheck = await checkLimit(c, `client:${clientTokenId}`, perClientLimit);
   if (!clientCheck.allowed) {
@@ -176,6 +180,31 @@ async function handleToolCall(
 ): Promise<JsonRpcResponse> {
   const toolName = params?.name as string;
   const toolArgs = (params?.arguments || {}) as Record<string, unknown>;
+
+  // Phase 3.4: Check if tool is allowed for this token
+  const allowedTools = c.get('clientTokenAllowedTools') as unknown;
+  if (allowedTools !== null && allowedTools !== undefined) {
+    try {
+      const allowedToolsArray = Array.isArray(allowedTools)
+        ? allowedTools
+        : (typeof allowedTools === 'string' ? JSON.parse(allowedTools) : []);
+
+      if (Array.isArray(allowedToolsArray) && allowedToolsArray.length > 0) {
+        if (!allowedToolsArray.includes(toolName)) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: {
+              code: -32600,
+              message: `Tool '${toolName}' is not allowed for this token. Allowed tools: ${allowedToolsArray.join(', ')}`
+            },
+          };
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing allowedTools:', error);
+    }
+  }
 
   try {
     let result: { content: Array<{ type: 'text'; text: string }> };

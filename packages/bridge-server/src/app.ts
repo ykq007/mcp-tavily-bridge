@@ -220,7 +220,13 @@ export function createBridgeApp(options: CreateBridgeAppOptions = {}): express.E
       return;
     }
 
-    const tokenCheck = perTokenLimiter.check(validated.clientTokenId);
+    // Phase 3.5: Use per-token rate limit if set, otherwise use global default
+    const tokenRateLimit = validated.rateLimit ?? RATE_LIMIT_PER_MINUTE;
+    const tokenLimiter = validated.rateLimit !== null
+      ? new FixedWindowRateLimiter({ maxPerWindow: tokenRateLimit, windowMs: 60_000 })
+      : perTokenLimiter;
+
+    const tokenCheck = tokenLimiter.check(validated.clientTokenId);
     if (!tokenCheck.ok) {
       const retryAfter = tokenCheck.retryAfterMs;
       res.status(429).json({ error: 'Rate limit exceeded', retryAfterMs: retryAfter });
@@ -262,6 +268,7 @@ export function createBridgeApp(options: CreateBridgeAppOptions = {}): express.E
         clientTokenId: validated.clientTokenId,
         clientTokenPrefix: validated.prefix,
         rawClientToken: rawToken,
+        allowedTools: validated.allowedTools,  // Phase 3.4: Tool scoping
         defaultParametersHeader,
         ip,
         userAgent
@@ -291,7 +298,11 @@ export function createBridgeApp(options: CreateBridgeAppOptions = {}): express.E
                 const headerDefaults = parseDefaultParametersJson(defaultParametersHeader);
                 return { ...envDefaults, ...headerDefaults };
               },
-              getSearchSourceMode: () => serverSettings.getSearchSourceMode()
+              getSearchSourceMode: () => serverSettings.getSearchSourceMode(),
+              getAllowedTools: () => {
+                const ctx = requestContext.getStore();
+                return ctx?.allowedTools;
+              }
             });
 
             await server.connect(transport);

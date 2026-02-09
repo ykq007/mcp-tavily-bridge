@@ -16,7 +16,7 @@ export function parseClientToken(raw: string): ParsedClientToken {
 }
 
 export async function validateClientToken(prisma: PrismaClient, raw: string): Promise<
-  | { ok: true; clientTokenId: string; prefix: string }
+  | { ok: true; clientTokenId: string; prefix: string; allowedTools: unknown; rateLimit: number | null }
   | { ok: false; error: string }
 > {
   const parsed = parseClientToken(raw);
@@ -31,6 +31,12 @@ export async function validateClientToken(prisma: PrismaClient, raw: string): Pr
   const actual = sha256Bytes(parsed.secret);
   if (!timingSafeEqualBytes(expected, actual)) return { ok: false, error: 'Invalid token' };
 
-  return { ok: true, clientTokenId: record.id, prefix: record.tokenPrefix };
+  return {
+    ok: true,
+    clientTokenId: record.id,
+    prefix: record.tokenPrefix,
+    allowedTools: record.allowedTools,
+    rateLimit: record.rateLimit
+  };
 }
 

@@ -583,7 +583,7 @@ export function registerAdminRoutes(
   }));
 
   app.post(p('/tokens'), requireAdmin, asyncHandler(async (req, res) => {
-    const { description, expiresInSeconds } = req.body ?? {};
+    const { description, expiresInSeconds, allowedTools, rateLimit } = req.body ?? {};
     const prefix = `mcp_${randomBytes(6).toString('hex')}`;
     const secret = randomBytes(24).toString('hex');
     const token = `${prefix}.${secret}`;
@@ -593,12 +593,24 @@ export function registerAdminRoutes(
         ? new Date(Date.now() + expiresInSeconds * 1000)
         : null;
 
+    // Phase 3.4: Validate allowedTools if provided
+    const allowedToolsValue = Array.isArray(allowedTools) && allowedTools.length > 0
+      ? allowedTools
+      : undefined;
+
+    // Phase 3.5: Validate rateLimit if provided
+    const rateLimitValue = typeof rateLimit === 'number' && Number.isFinite(rateLimit) && rateLimit > 0
+      ? Math.floor(rateLimit)
+      : undefined;
+
     const created = await prisma.clientToken.create({
       data: {
         description: typeof description === 'string' ? description : null,
         tokenPrefix: prefix,
         tokenHash: Uint8Array.from(sha256Bytes(secret)),
-        expiresAt
+        expiresAt,
+        allowedTools: allowedToolsValue,
+        rateLimit: rateLimitValue
       }
     });
 

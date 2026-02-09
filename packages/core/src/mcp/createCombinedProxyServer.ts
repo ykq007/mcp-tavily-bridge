@@ -33,6 +33,7 @@ type CreateCombinedProxyServerOptions = {
   getDefaultParameters?: TavilyDefaultParametersProvider;
   getAuthToken?: (ctx: unknown) => string | undefined;
   getSearchSourceMode?: SearchSourceModeProvider;
+  getAllowedTools?: (ctx: unknown) => unknown | Promise<unknown>;  // Phase 3.4: Tool scoping
 };
 
 export function createCombinedProxyServer({
@@ -44,7 +45,8 @@ export function createCombinedProxyServer({
   braveMaxQueueMs = 30_000,
   getDefaultParameters,
   getAuthToken,
-  getSearchSourceMode
+  getSearchSourceMode,
+  getAllowedTools  // Phase 3.4: Tool scoping
 }: CreateCombinedProxyServerOptions): Server {
   const server = new Server(
     { name: serverName, version: serverVersion },
@@ -70,6 +72,30 @@ export function createCombinedProxyServer({
 
     const args = request.params.arguments ?? {};
     const toolName = request.params.name;
+
+    // Phase 3.4: Check if tool is allowed for this token
+    if (getAllowedTools) {
+      const allowedTools = await getAllowedTools(extra);
+      if (allowedTools !== null && allowedTools !== undefined) {
+        try {
+          const allowedToolsArray = Array.isArray(allowedTools)
+            ? allowedTools
+            : (typeof allowedTools === 'string' ? JSON.parse(allowedTools) : []);
+
+          if (Array.isArray(allowedToolsArray) && allowedToolsArray.length > 0) {
+            if (!allowedToolsArray.includes(toolName)) {
+              throw new McpError(
+                ErrorCode.InvalidRequest,
+                `Tool '${toolName}' is not allowed for this token. Allowed tools: ${allowedToolsArray.join(', ')}`
+              );
+            }
+          }
+        } catch (error) {
+          if (error instanceof McpError) throw error;
+          // Ignore JSON parse errors, allow all tools if parsing fails
+        }
+      }
+    }
 
     try {
       switch (toolName) {

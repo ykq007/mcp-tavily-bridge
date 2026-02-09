@@ -4,6 +4,7 @@ export type RequestContext = {
   clientTokenId: string;
   clientTokenPrefix: string;
   rawClientToken: string;
+  allowedTools?: unknown;  // Phase 3.4: Tool scoping
   defaultParametersHeader?: string;
   ip?: string;
   userAgent?: string;

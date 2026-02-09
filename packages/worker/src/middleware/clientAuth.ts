@@ -64,6 +64,8 @@ export async function clientAuth(c: Context<{ Bindings: Env }>, next: Next): Pro
     // Store client info in context for later use
     c.set('clientTokenId', clientToken.id);
     c.set('clientTokenPrefix', clientToken.tokenPrefix);
+    c.set('clientTokenAllowedTools', clientToken.allowedTools);
+    c.set('clientTokenRateLimit', clientToken.rateLimit);
 
     await next();
   } catch (error) {

@@ -394,12 +394,23 @@ export class D1Client {
     tokenPrefix: string;
     tokenHash: ArrayBuffer;
     expiresAt?: string;
+    allowedTools?: string | null;  // Phase 3.4: JSON string or null
+    rateLimit?: number | null;     // Phase 3.5: requests per minute or null
   }): Promise<void> {
     const now = new Date().toISOString();
     await this.db.prepare(`
-      INSERT INTO ClientToken (id, description, tokenPrefix, tokenHash, scopesJson, expiresAt, createdAt)
-      VALUES (?, ?, ?, ?, '[]', ?, ?)
-    `).bind(data.id, data.description || null, data.tokenPrefix, data.tokenHash, data.expiresAt || null, now).run();
+      INSERT INTO ClientToken (id, description, tokenPrefix, tokenHash, scopesJson, allowedTools, rateLimit, expiresAt, createdAt)
+      VALUES (?, ?, ?, ?, '[]', ?, ?, ?, ?)
+    `).bind(
+      data.id,
+      data.description || null,
+      data.tokenPrefix,
+      data.tokenHash,
+      data.allowedTools || null,
+      data.rateLimit || null,
+      data.expiresAt || null,
+      now
+    ).run();
   }
 
   async revokeClientToken(id: string): Promise<void> {

@@ -625,7 +625,7 @@ adminRouter.get('/tokens', async (c) => {
 });
 
 adminRouter.post('/tokens', async (c) => {
-  const body = await c.req.json<{ description?: string; expiresAt?: string }>();
+  const body = await c.req.json<{ description?: string; expiresAt?: string; allowedTools?: string[]; rateLimit?: number }>();
 
   const db = new D1Client(c.env.DB);
 
@@ -639,12 +639,24 @@ adminRouter.post('/tokens', async (c) => {
   const tokenData = encoder.encode(token);
   const hashBuffer = await crypto.subtle.digest('SHA-256', tokenData);
 
+  // Phase 3.4: Validate allowedTools if provided
+  const allowedToolsValue = Array.isArray(body.allowedTools) && body.allowedTools.length > 0
+    ? JSON.stringify(body.allowedTools)
+    : null;
+
+  // Phase 3.5: Validate rateLimit if provided
+  const rateLimitValue = typeof body.rateLimit === 'number' && Number.isFinite(body.rateLimit) && body.rateLimit > 0
+    ? Math.floor(body.rateLimit)
+    : null;
+
   await db.createClientToken({
     id,
     description: body.description,
     tokenPrefix,
     tokenHash: hashBuffer,
     expiresAt: body.expiresAt,
+    allowedTools: allowedToolsValue,
+    rateLimit: rateLimitValue,
   });
 
   // Return the full token only once (it can't be retrieved later)
