@@ -78,10 +78,68 @@ export type TavilyToolUsageSummaryDto = {
   topQueries: { queryHash: string | null; queryPreview: string | null; count: number }[];
 };
 
+export type MetricsDto = {
+  requestsPerMinute: number;
+  requestsPerHour: number;
+  activeTokens: number;
+  keyPool: {
+    total: number;
+    active: number;
+    unhealthy: number;
+    tavily: {
+      total: number;
+      active: number;
+      cooldown: number;
+      invalid: number;
+    };
+    brave: {
+      total: number;
+      active: number;
+      invalid: number;
+    };
+  };
+  recentErrors: Array<{
+    id: string;
+    toolName: string;
+    errorMessage: string | null;
+    timestamp: string;
+  }>;
+  timestamp: string;
+};
+
 export type ServerInfoDto = {
   tavilyKeySelectionStrategy: 'round_robin' | 'random';
   searchSourceMode: SearchSourceMode;
   braveSearchEnabled: boolean;
+};
+
+export type CostEstimateDto = {
+  period: {
+    from: string;
+    to: string;
+  };
+  tavily: {
+    totalCredits: number;
+    breakdown: Array<{
+      toolName: string;
+      count: number;
+      creditCost: number;
+      totalCredits: number;
+    }>;
+  };
+  brave: {
+    totalRequests: number;
+    estimatedCostUsd: number;
+    breakdown: Array<{
+      toolName: string;
+      count: number;
+    }>;
+  };
+  summary: {
+    tavilyCreditsUsed: number;
+    braveRequestsMade: number;
+    braveEstimatedCostUsd: number;
+  };
 };
 
 export type KeyExportDto = {
@@ -143,6 +201,8 @@ export type AdminApi = {
   getServerInfo: () => Promise<ServerInfoDto>;
   updateServerInfo: (input: Partial<Pick<ServerInfoDto, 'tavilyKeySelectionStrategy' | 'searchSourceMode'>>) => Promise<ServerInfoDto & { ok: true }>;
 
+  getMetrics: () => Promise<MetricsDto>;
+
   listKeys: () => Promise<TavilyKeyDto[]>;
   createKey: (input: { label: string; apiKey: string }) => Promise<{ id: string }>;
   revealKey: (id: string) => Promise<{ apiKey: string }>;
@@ -164,6 +224,7 @@ export type AdminApi = {
 
   listUsage: (filters?: TavilyToolUsageFilters) => Promise<TavilyToolUsageResponseDto>;
   getUsageSummary: (filters?: { dateFrom?: string; dateTo?: string }) => Promise<TavilyToolUsageSummaryDto>;
+  getCostEstimate: (filters?: { dateFrom?: string; dateTo?: string }) => Promise<CostEstimateDto>;
 
   exportKeys: () => Promise<KeyExportDto>;
   importKeys: (payload: KeyExportDto) => Promise<BatchImportResult>;
@@ -262,6 +323,8 @@ export function createAdminApi(
     getServerInfo: () => getJson('/admin/api/server-info'),
     updateServerInfo: (input) => requestJson('/admin/api/server-info', { method: 'PATCH', body: JSON.stringify(input) }),
 
+    getMetrics: () => getJson('/admin/api/metrics'),
+
     listKeys: () => getJson('/admin/api/keys'),
     createKey: (input) => requestJson('/admin/api/keys', { method: 'POST', body: JSON.stringify(input) }),
     revealKey: (id) => getJson(`/admin/api/keys/${encodeURIComponent(id)}/reveal`),
@@ -306,6 +369,15 @@ export function createAdminApi(
       if (filters.dateTo) params.set('dateTo', filters.dateTo);
       const queryString = params.toString();
       const path = queryString ? `/admin/api/usage/summary?${queryString}` : '/admin/api/usage/summary';
+      return getJson(path);
+    },
+
+    getCostEstimate: (filters = {}) => {
+      const params = new URLSearchParams();
+      if (filters.dateFrom) params.set('dateFrom', filters.dateFrom);
+      if (filters.dateTo) params.set('dateTo', filters.dateTo);
+      const queryString = params.toString();
+      const path = queryString ? `/admin/api/cost-estimate?${queryString}` : '/admin/api/cost-estimate';
       return getJson(path);
     },
 

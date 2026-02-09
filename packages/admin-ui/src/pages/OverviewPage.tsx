@@ -1,17 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AdminApi, ClientTokenDto, TavilyKeyDto, TavilyToolUsageDto } from '../lib/adminApi';
+import type { AdminApi, ClientTokenDto, CostEstimateDto, MetricsDto, TavilyKeyDto, TavilyToolUsageDto } from '../lib/adminApi';
 import { formatDateTime } from '../lib/format';
 import { IconKey, IconRefresh, IconSearch, IconToken } from '../ui/icons';
 import { KpiCard } from '../ui/KpiCard';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { EmptyState } from '../ui/EmptyState';
 import { DataTable, type DataTableColumn } from '../ui/DataTable';
+import { MetricsCard, RecentErrorsCard } from '../ui/MetricsCard';
+import { OnboardingGuide } from '../ui/OnboardingGuide';
 
 type OverviewData = {
   keys: TavilyKeyDto[];
   tokens: ClientTokenDto[];
   usage: TavilyToolUsageDto[];
+  metrics: MetricsDto | null;
+  costEstimate: CostEstimateDto | null;
 };
 
 export function OverviewPage({
@@ -35,12 +39,14 @@ export function OverviewPage({
     setLoading(true);
     setError(null);
     try {
-      const [keys, tokens, usageResponse] = await Promise.all([
+      const [keys, tokens, usageResponse, metrics, costEstimate] = await Promise.all([
         api.listKeys(),
         api.listTokens(),
-        api.listUsage({ limit: 10, order: 'desc' })
+        api.listUsage({ limit: 10, order: 'desc' }),
+        api.getMetrics().catch(() => null),
+        api.getCostEstimate().catch(() => null)
       ]);
-      setData({ keys, tokens, usage: usageResponse.logs });
+      setData({ keys, tokens, usage: usageResponse.logs, metrics, costEstimate });
     } catch (e: any) {
       setError(typeof e?.message === 'string' ? e.message : tc('errors.unknownError'));
       setData(null);
@@ -73,8 +79,36 @@ export function OverviewPage({
     };
   }, [data]);
 
+  const [onboardingDismissed, setOnboardingDismissed] = useState(() => {
+    try {
+      return localStorage.getItem('mcp-nexus-onboarding-dismissed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleDismissOnboarding = useCallback(() => {
+    setOnboardingDismissed(true);
+    try {
+      localStorage.setItem('mcp-nexus-onboarding-dismissed', 'true');
+    } catch {
+      // Ignore storage errors
+    }
+  }, []);
+
   return (
     <div className="stack">
+      {/* Onboarding Guide - shows when keys or tokens are missing */}
+      {!onboardingDismissed && data && (kpis.totalKeys === 0 || kpis.activeTokens === 0) && (
+        <OnboardingGuide
+          hasKeys={kpis.totalKeys > 0}
+          hasTokens={kpis.activeTokens > 0}
+          onGoToKeys={onGoToKeys}
+          onGoToTokens={onGoToTokens}
+          onDismiss={handleDismissOnboarding}
+        />
+      )}
+
       <div className="card">
         <div className="cardHeader">
           <div className="row">
@@ -130,6 +164,55 @@ export function OverviewPage({
             )}
           </div>
         </div>
+      </div>
+
+      {/* Real-time Metrics Section */}
+      <div className="overviewBentoRow">
+        <MetricsCard
+          title={t('metrics.realtime', 'Real-time Metrics')}
+          loading={loading && !data}
+          metrics={[
+            {
+              label: t('metrics.requestsPerMinute', 'Requests/min'),
+              value: data?.metrics?.requestsPerMinute ?? 0,
+              variant: 'neutral'
+            },
+            {
+              label: t('metrics.requestsPerHour', 'Requests/hour'),
+              value: data?.metrics?.requestsPerHour ?? 0,
+              variant: 'neutral'
+            },
+            {
+              label: t('metrics.activeTokens', 'Active Tokens'),
+              value: data?.metrics?.activeTokens ?? 0,
+              variant: 'success'
+            },
+            {
+              label: t('metrics.activeKeys', 'Active Keys'),
+              value: data?.metrics?.keyPool?.active ?? 0,
+              variant: 'success'
+            },
+            {
+              label: t('metrics.unhealthyKeys', 'Unhealthy Keys'),
+              value: data?.metrics?.keyPool?.unhealthy ?? 0,
+              variant: (data?.metrics?.keyPool?.unhealthy ?? 0) > 0 ? 'warning' : 'neutral'
+            },
+            {
+              label: t('metrics.tavilyCost', 'Tavily Credits (30d)'),
+              value: data?.costEstimate?.summary?.tavilyCreditsUsed ?? 0,
+              variant: 'neutral'
+            },
+            {
+              label: t('metrics.braveCost', 'Brave Est. Cost (30d)'),
+              value: `$${(data?.costEstimate?.summary?.braveEstimatedCostUsd ?? 0).toFixed(2)}`,
+              variant: 'neutral'
+            }
+          ]}
+        />
+        <RecentErrorsCard
+          errors={data?.metrics?.recentErrors ?? []}
+          loading={loading && !data}
+        />
       </div>
 
       <div className="overviewBentoRow">

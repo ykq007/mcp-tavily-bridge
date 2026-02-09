@@ -1170,4 +1170,167 @@ export function registerAdminRoutes(
       errors
     });
   }));
+
+  // Real-time metrics endpoint for dashboard
+  app.get(p('/metrics'), requireAdmin, asyncHandler(async (_req, res) => {
+    const now = new Date();
+    const oneMinuteAgo = new Date(now.getTime() - 60_000);
+    const oneHourAgo = new Date(now.getTime() - 3600_000);
+
+    const [
+      tavilyKeys,
+      braveKeys,
+      clientTokens,
+      tavilyRecentCount,
+      braveRecentCount,
+      tavilyHourlyCount,
+      braveHourlyCount,
+      recentErrors
+    ] = await prisma.$transaction([
+      prisma.tavilyKey.findMany({ select: { id: true, status: true } }),
+      prisma.braveKey.findMany({ select: { id: true, status: true } }),
+      prisma.clientToken.findMany({ select: { id: true, revokedAt: true } }),
+      prisma.tavilyToolUsage.count({ where: { timestamp: { gte: oneMinuteAgo } } }),
+      prisma.braveToolUsage.count({ where: { timestamp: { gte: oneMinuteAgo } } }),
+      prisma.tavilyToolUsage.count({ where: { timestamp: { gte: oneHourAgo } } }),
+      prisma.braveToolUsage.count({ where: { timestamp: { gte: oneHourAgo } } }),
+      prisma.tavilyToolUsage.findMany({
+        where: {
+          outcome: 'error',
+          timestamp: { gte: oneHourAgo }
+        },
+        orderBy: { timestamp: 'desc' },
+        take: 5,
+        select: { id: true, toolName: true, errorMessage: true, timestamp: true }
+      })
+    ]);
+
+    const activeKeys = tavilyKeys.filter(k => k.status === 'active').length +
+                       braveKeys.filter(k => k.status === 'active').length;
+    const unhealthyKeys = tavilyKeys.filter(k => k.status === 'invalid' || k.status === 'cooldown').length +
+                          braveKeys.filter(k => k.status === 'invalid').length;
+    const activeTokens = clientTokens.filter(t => !t.revokedAt).length;
+
+    res.json({
+      requestsPerMinute: tavilyRecentCount + braveRecentCount,
+      requestsPerHour: tavilyHourlyCount + braveHourlyCount,
+      activeTokens,
+      keyPool: {
+        total: tavilyKeys.length + braveKeys.length,
+        active: activeKeys,
+        unhealthy: unhealthyKeys,
+        tavily: {
+          total: tavilyKeys.length,
+          active: tavilyKeys.filter(k => k.status === 'active').length,
+          cooldown: tavilyKeys.filter(k => k.status === 'cooldown').length,
+          invalid: tavilyKeys.filter(k => k.status === 'invalid').length
+        },
+        brave: {
+          total: braveKeys.length,
+          active: braveKeys.filter(k => k.status === 'active').length,
+          invalid: braveKeys.filter(k => k.status === 'invalid').length
+        }
+      },
+      recentErrors: recentErrors.map(e => ({
+        id: e.id,
+        toolName: e.toolName,
+        errorMessage: e.errorMessage,
+        timestamp: e.timestamp.toISOString()
+      })),
+      timestamp: now.toISOString()
+    });
+  }));
+
+  // Cost estimation endpoint
+  // Tavily credit costs: search=1, extract=1, crawl=2, map=1, research=5
+  // Brave: free tier limited, paid tier varies
+  app.get(p('/cost-estimate'), requireAdmin, asyncHandler(async (req, res) => {
+    const dateFromRaw = req.query.dateFrom as string | undefined;
+    const dateToRaw = req.query.dateTo as string | undefined;
+
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const dateFrom = dateFromRaw ? new Date(dateFromRaw) : thirtyDaysAgo;
+    const dateTo = dateToRaw ? new Date(dateToRaw) : now;
+
+    const where: any = {
+      timestamp: {
+        gte: dateFrom,
+        lte: dateTo
+      },
+      outcome: 'success'
+    };
+
+    const [tavilyUsage, braveUsage] = await prisma.$transaction([
+      prisma.tavilyToolUsage.groupBy({
+        by: ['toolName'],
+        where,
+        orderBy: { toolName: 'asc' },
+        _count: { _all: true }
+      }),
+      prisma.braveToolUsage.groupBy({
+        by: ['toolName'],
+        where,
+        orderBy: { toolName: 'asc' },
+        _count: { _all: true }
+      })
+    ]);
+
+    // Tavily credit costs per tool
+    const tavilyCostMap: Record<string, number> = {
+      tavily_search: 1,
+      tavily_extract: 1,
+      tavily_crawl: 2,
+      tavily_map: 1,
+      tavily_research: 5
+    };
+
+    let tavilyTotalCredits = 0;
+    const tavilyBreakdown = tavilyUsage.map(item => {
+      const cost = tavilyCostMap[item.toolName] ?? 1;
+      const count = (item._count as { _all: number })._all;
+      const credits = count * cost;
+      tavilyTotalCredits += credits;
+      return {
+        toolName: item.toolName,
+        count,
+        creditCost: cost,
+        totalCredits: credits
+      };
+    });
+
+    // Brave is usage-based, estimate $0.003/request for Pro tier
+    let braveTotalRequests = 0;
+    const braveBreakdown = braveUsage.map(item => {
+      const count = (item._count as { _all: number })._all;
+      braveTotalRequests += count;
+      return {
+        toolName: item.toolName,
+        count
+      };
+    });
+    const braveEstimatedCostUsd = braveTotalRequests * 0.003;
+
+    res.json({
+      period: {
+        from: dateFrom.toISOString(),
+        to: dateTo.toISOString()
+      },
+      tavily: {
+        totalCredits: tavilyTotalCredits,
+        breakdown: tavilyBreakdown
+      },
+      brave: {
+        totalRequests: braveTotalRequests,
+        estimatedCostUsd: Math.round(braveEstimatedCostUsd * 100) / 100,
+        breakdown: braveBreakdown
+      },
+      summary: {
+        tavilyCreditsUsed: tavilyTotalCredits,
+        braveRequestsMade: braveTotalRequests,
+        braveEstimatedCostUsd: Math.round(braveEstimatedCostUsd * 100) / 100
+      }
+    });
+  }));
 }

@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 
 import type { Env } from '../../env.js';
 import { adminAuth } from '../../middleware/adminAuth.js';
-import { D1Client, generateId } from '../../db/d1.js';
+import { D1Client, generateId, type TavilyKey, type BraveKey, type ClientToken } from '../../db/d1.js';
 import { encrypt, decrypt, maskApiKey, generateToken } from '../../crypto/crypto.js';
 import { parseSearchSourceMode } from '../../mcp/searchSource.js';
 
@@ -1055,6 +1055,160 @@ adminRouter.post('/keys/import', async (c) => {
     summary,
     renamed,
     errors
+  });
+});
+
+// Real-time metrics endpoint for dashboard
+adminRouter.get('/metrics', async (c) => {
+  const db = new D1Client(c.env.DB);
+  const now = new Date();
+  const oneMinuteAgo = new Date(now.getTime() - 60_000).toISOString();
+  const oneHourAgo = new Date(now.getTime() - 3600_000).toISOString();
+
+  const [
+    tavilyKeys,
+    braveKeys,
+    clientTokens,
+    tavilyRecentResult,
+    braveRecentResult,
+    tavilyHourlyResult,
+    braveHourlyResult,
+    recentErrors
+  ] = await Promise.all([
+    db.getTavilyKeys(),
+    db.getBraveKeys(),
+    db.getClientTokens(),
+    c.env.DB.prepare('SELECT COUNT(*) as count FROM TavilyToolUsage WHERE timestamp >= ?').bind(oneMinuteAgo).first<{ count: number }>(),
+    c.env.DB.prepare('SELECT COUNT(*) as count FROM BraveToolUsage WHERE timestamp >= ?').bind(oneMinuteAgo).first<{ count: number }>(),
+    c.env.DB.prepare('SELECT COUNT(*) as count FROM TavilyToolUsage WHERE timestamp >= ?').bind(oneHourAgo).first<{ count: number }>(),
+    c.env.DB.prepare('SELECT COUNT(*) as count FROM BraveToolUsage WHERE timestamp >= ?').bind(oneHourAgo).first<{ count: number }>(),
+    c.env.DB.prepare(`
+      SELECT id, toolName, errorMessage, timestamp
+      FROM TavilyToolUsage
+      WHERE outcome = 'error' AND timestamp >= ?
+      ORDER BY timestamp DESC
+      LIMIT 5
+    `).bind(oneHourAgo).all<{ id: string; toolName: string; errorMessage: string | null; timestamp: string }>()
+  ]);
+
+  const activeKeys = tavilyKeys.filter((k: TavilyKey) => k.status === 'active').length +
+                     braveKeys.filter((k: BraveKey) => k.status === 'active').length;
+  const unhealthyKeys = tavilyKeys.filter((k: TavilyKey) => k.status === 'invalid' || k.status === 'cooldown').length +
+                        braveKeys.filter((k: BraveKey) => k.status === 'invalid').length;
+  const activeTokens = clientTokens.filter((t: ClientToken) => !t.revokedAt).length;
+
+  return c.json({
+    requestsPerMinute: (tavilyRecentResult?.count ?? 0) + (braveRecentResult?.count ?? 0),
+    requestsPerHour: (tavilyHourlyResult?.count ?? 0) + (braveHourlyResult?.count ?? 0),
+    activeTokens,
+    keyPool: {
+      total: tavilyKeys.length + braveKeys.length,
+      active: activeKeys,
+      unhealthy: unhealthyKeys,
+      tavily: {
+        total: tavilyKeys.length,
+        active: tavilyKeys.filter((k: TavilyKey) => k.status === 'active').length,
+        cooldown: tavilyKeys.filter((k: TavilyKey) => k.status === 'cooldown').length,
+        invalid: tavilyKeys.filter((k: TavilyKey) => k.status === 'invalid').length
+      },
+      brave: {
+        total: braveKeys.length,
+        active: braveKeys.filter((k: BraveKey) => k.status === 'active').length,
+        invalid: braveKeys.filter((k: BraveKey) => k.status === 'invalid').length
+      }
+    },
+    recentErrors: (recentErrors.results ?? []).map((e: { id: string; toolName: string; errorMessage: string | null; timestamp: string }) => ({
+      id: e.id,
+      toolName: e.toolName,
+      errorMessage: e.errorMessage,
+      timestamp: e.timestamp
+    })),
+    timestamp: now.toISOString()
+  });
+});
+
+// Cost estimation endpoint
+// Tavily credit costs: search=1, extract=1, crawl=2, map=1, research=5
+adminRouter.get('/cost-estimate', async (c) => {
+  const dateFromRaw = c.req.query('dateFrom');
+  const dateToRaw = c.req.query('dateTo');
+
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  const dateFrom = dateFromRaw ? new Date(dateFromRaw) : thirtyDaysAgo;
+  const dateTo = dateToRaw ? new Date(dateToRaw) : now;
+
+  const dateFromIso = dateFrom.toISOString();
+  const dateToIso = dateTo.toISOString();
+
+  // Get usage counts grouped by tool
+  const tavilyUsageResult = await c.env.DB.prepare(`
+    SELECT toolName, COUNT(*) as count
+    FROM TavilyToolUsage
+    WHERE timestamp >= ? AND timestamp <= ? AND outcome = 'success'
+    GROUP BY toolName
+  `).bind(dateFromIso, dateToIso).all<{ toolName: string; count: number }>();
+
+  const braveUsageResult = await c.env.DB.prepare(`
+    SELECT toolName, COUNT(*) as count
+    FROM BraveToolUsage
+    WHERE timestamp >= ? AND timestamp <= ? AND outcome = 'success'
+    GROUP BY toolName
+  `).bind(dateFromIso, dateToIso).all<{ toolName: string; count: number }>();
+
+  // Tavily credit costs per tool
+  const tavilyCostMap: Record<string, number> = {
+    tavily_search: 1,
+    tavily_extract: 1,
+    tavily_crawl: 2,
+    tavily_map: 1,
+    tavily_research: 5
+  };
+
+  let tavilyTotalCredits = 0;
+  const tavilyBreakdown = (tavilyUsageResult.results ?? []).map(item => {
+    const cost = tavilyCostMap[item.toolName] ?? 1;
+    const credits = item.count * cost;
+    tavilyTotalCredits += credits;
+    return {
+      toolName: item.toolName,
+      count: item.count,
+      creditCost: cost,
+      totalCredits: credits
+    };
+  });
+
+  // Brave is usage-based, estimate $0.003/request for Pro tier
+  let braveTotalRequests = 0;
+  const braveBreakdown = (braveUsageResult.results ?? []).map(item => {
+    braveTotalRequests += item.count;
+    return {
+      toolName: item.toolName,
+      count: item.count
+    };
+  });
+  const braveEstimatedCostUsd = braveTotalRequests * 0.003;
+
+  return c.json({
+    period: {
+      from: dateFrom.toISOString(),
+      to: dateTo.toISOString()
+    },
+    tavily: {
+      totalCredits: tavilyTotalCredits,
+      breakdown: tavilyBreakdown
+    },
+    brave: {
+      totalRequests: braveTotalRequests,
+      estimatedCostUsd: Math.round(braveEstimatedCostUsd * 100) / 100,
+      breakdown: braveBreakdown
+    },
+    summary: {
+      tavilyCreditsUsed: tavilyTotalCredits,
+      braveRequestsMade: braveTotalRequests,
+      braveEstimatedCostUsd: Math.round(braveEstimatedCostUsd * 100) / 100
+    }
   });
 });
 
