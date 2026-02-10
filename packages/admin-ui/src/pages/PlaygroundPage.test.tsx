@@ -17,6 +17,7 @@ vi.mock('../components/JsonViewer', () => ({
 vi.mock('../components/ToolSelector', () => ({
   ToolSelector: () => <div className="tool-selector-mock" />,
   MCP_TOOLS: ['tavily_search'],
+  coerceMcpTool: () => 'tavily_search',
 }));
 
 // Mock icons

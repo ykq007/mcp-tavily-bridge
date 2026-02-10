@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { formatDistanceToNow } from 'date-fns';
 import { JsonViewer } from '../components/JsonViewer';
-import { ToolSelector, McpTool } from '../components/ToolSelector';
+import { ToolSelector, McpTool, coerceMcpTool } from '../components/ToolSelector';
 import { IconRefresh, IconSearch, IconTrash, IconInfo, IconCheck, IconAlertCircle } from '../ui/icons';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { resolveMcpUrl } from '../app/mcpSetupTemplates';
@@ -52,7 +52,14 @@ function useStickyState<T>(key: string, defaultValue: T): [T, (value: T) => void
 export function PlaygroundPage({ apiBaseUrl = '' }: { apiBaseUrl?: string }) {
   // State
   const [clientToken, setClientToken] = useStickyState<string>('mcp-playground-token', '');
-  const [selectedTool, setSelectedTool] = useStickyState<McpTool>('mcp-playground-tool', 'tavily_search');
+  const [selectedToolRaw, setSelectedToolRaw] = useStickyState<McpTool>('mcp-playground-tool', 'tavily_search');
+  const selectedTool = coerceMcpTool(selectedToolRaw);
+
+  useEffect(() => {
+    if (selectedToolRaw !== selectedTool) {
+      setSelectedToolRaw(selectedTool);
+    }
+  }, [selectedToolRaw, selectedTool, setSelectedToolRaw]);
   const [paramsJson, setParamsJson] = useStickyState<string>(
     'mcp-playground-params',
     `{
@@ -233,9 +240,9 @@ export function PlaygroundPage({ apiBaseUrl = '' }: { apiBaseUrl?: string }) {
   };
 
   const loadHistoryItem = (item: PlaygroundHistoryItem) => {
-     setSelectedTool(item.tool);
-     setParamsJson(JSON.stringify(item.params, null, 2));
-     setSelectedHistoryId(item.id);
+    setSelectedToolRaw(item.tool);
+    setParamsJson(JSON.stringify(item.params, null, 2));
+    setSelectedHistoryId(item.id);
   };
 
   return (
@@ -274,7 +281,7 @@ export function PlaygroundPage({ apiBaseUrl = '' }: { apiBaseUrl?: string }) {
                 <div className="help">Your secret client token (not the Tavily API key)</div>
               </div>
 
-              <ToolSelector value={selectedTool} onChange={setSelectedTool} disabled={loading} />
+              <ToolSelector value={selectedTool} onChange={setSelectedToolRaw} disabled={loading} />
 
               <div className="stack gap-1">
                 <label htmlFor="params" className="label">
