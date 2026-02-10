@@ -1,10 +1,19 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { formatDistanceToNow } from 'date-fns';
 import { JsonViewer } from '../components/JsonViewer';
-import { ToolSelector, McpTool, MCP_TOOLS } from '../components/ToolSelector';
+import { ToolSelector, McpTool } from '../components/ToolSelector';
 import { IconRefresh, IconSearch, IconTrash, IconInfo, IconCheck, IconAlertCircle } from '../ui/icons';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { resolveMcpUrl } from '../app/mcpSetupTemplates';
+import {
+  buildMcpHeaders,
+  getJsonRpcErrorMessage,
+  isSessionInvalidErrorMessage,
+  parseMcpResponseMessages,
+  pickJsonRpcResponse,
+  type JsonRpcMessage
+} from './playgroundMcp';
 
 // Types
 type PlaygroundHistoryItem = {
@@ -40,7 +49,7 @@ function useStickyState<T>(key: string, defaultValue: T): [T, (value: T) => void
   return [value, setValue];
 }
 
-export function PlaygroundPage() {
+export function PlaygroundPage({ apiBaseUrl = '' }: { apiBaseUrl?: string }) {
   // State
   const [clientToken, setClientToken] = useStickyState<string>('mcp-playground-token', '');
   const [selectedTool, setSelectedTool] = useStickyState<McpTool>('mcp-playground-tool', 'tavily_search');
@@ -51,9 +60,12 @@ export function PlaygroundPage() {
 }`
   );
   const [history, setHistory] = useStickyState<PlaygroundHistoryItem[]>('mcp-playground-history', []);
+  const [sessionId, setSessionId] = useStickyState<string>('mcp-playground-session-id', '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const mcpUrl = resolveMcpUrl({ apiBaseUrl, origin });
 
   // Derived state
   const selectedHistoryItem = selectedHistoryId
@@ -62,7 +74,8 @@ export function PlaygroundPage() {
 
   const handleExecute = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clientToken.trim()) {
+    const token = clientToken.trim();
+    if (!token) {
       setError('Client Token is required');
       return;
     }
@@ -86,29 +99,106 @@ export function PlaygroundPage() {
     };
 
     try {
-      const res = await fetch('/mcp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${clientToken}`,
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: `tools/call`,
-          params: {
-             name: selectedTool,
-             arguments: params
-          }
-        }),
-      });
+      const parseResponse = async (
+        response: Response,
+        requestId: number
+      ): Promise<{ message: JsonRpcMessage | undefined; rawText: string }> => {
+        const rawText = await response.text();
+        const messages = parseMcpResponseMessages(rawText, response.headers.get('content-type'));
+        const message = pickJsonRpcResponse(messages, requestId);
+        return { message, rawText };
+      };
 
-      const data = await res.json();
+      const initializeSession = async (): Promise<string> => {
+        const initializeRequestId = Date.now();
+        const initializeResponse = await fetch(mcpUrl, {
+          method: 'POST',
+          headers: buildMcpHeaders(token),
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: initializeRequestId,
+            method: 'initialize',
+            params: {
+              protocolVersion: '2024-11-05',
+              capabilities: {},
+              clientInfo: { name: 'mcp-nexus-admin-playground', version: '1.0.0' }
+            }
+          })
+        });
+
+        const { message, rawText } = await parseResponse(initializeResponse, initializeRequestId);
+        const initializeError = getJsonRpcErrorMessage(message?.error);
+        if (initializeError) {
+          throw new Error(initializeError);
+        }
+        if (!initializeResponse.ok && !message) {
+          throw new Error(rawText || `HTTP ${initializeResponse.status}`);
+        }
+
+        const nextSessionId = initializeResponse.headers.get('mcp-session-id');
+        if (!nextSessionId) {
+          throw new Error('Initialize succeeded but no MCP session ID was returned');
+        }
+
+        setSessionId(nextSessionId);
+        return nextSessionId;
+      };
+
+      let activeSessionId = sessionId.trim();
+      let responseMessage: JsonRpcMessage | undefined;
+      let responseRawText = '';
+
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        if (!activeSessionId) {
+          activeSessionId = await initializeSession();
+        }
+
+        const callRequestId = Date.now() + attempt + 1;
+        const callResponse = await fetch(mcpUrl, {
+          method: 'POST',
+          headers: buildMcpHeaders(token, activeSessionId),
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: callRequestId,
+            method: 'tools/call',
+            params: {
+              name: selectedTool,
+              arguments: params
+            }
+          })
+        });
+
+        const returnedSessionId = callResponse.headers.get('mcp-session-id');
+        if (returnedSessionId && returnedSessionId !== activeSessionId) {
+          activeSessionId = returnedSessionId;
+          setSessionId(returnedSessionId);
+        }
+
+        const parsed = await parseResponse(callResponse, callRequestId);
+        responseMessage = parsed.message;
+        responseRawText = parsed.rawText;
+
+        const messageText = getJsonRpcErrorMessage(responseMessage?.error);
+        if (attempt === 0 && isSessionInvalidErrorMessage(messageText)) {
+          activeSessionId = '';
+          setSessionId('');
+          continue;
+        }
+
+        if (!callResponse.ok && !responseMessage) {
+          throw new Error(responseRawText || `HTTP ${callResponse.status}`);
+        }
+
+        break;
+      }
+
+      if (!responseMessage) {
+        throw new Error(responseRawText || 'No JSON-RPC response received from MCP endpoint');
+      }
+
+      const isError = !!responseMessage.error;
+      const result = isError ? responseMessage.error : responseMessage.result;
       const duration = Date.now() - startTime;
-      
-      // Handle JSON-RPC errors or successful tool calls
-      const isError = !!data.error;
-      const result = isError ? data.error : data.result;
 
       const newItem: PlaygroundHistoryItem = {
         ...newItemBase,
@@ -118,7 +208,7 @@ export function PlaygroundPage() {
         duration,
       };
 
-      setHistory([newItem, ...history].slice(0, 50)); // Keep last 50
+      setHistory([newItem, ...history].slice(0, 50));
       setSelectedHistoryId(newItem.id);
     } catch (err: any) {
       const duration = Date.now() - startTime;

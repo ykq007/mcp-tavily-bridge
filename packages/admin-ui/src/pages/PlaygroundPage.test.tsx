@@ -51,6 +51,7 @@ const localStorageMock = (function () {
 // Assign to global.window
 global.window = {
   localStorage: localStorageMock,
+  location: { origin: 'http://localhost:5173' },
 } as any;
 
 describe('PlaygroundPage', () => {
