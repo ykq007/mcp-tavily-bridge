@@ -2,6 +2,8 @@ import React from 'react';
 
 interface MetricsCardProps {
   title: string;
+  subtitle?: string;
+  liveLabel?: string;
   metrics: Array<{
     label: string;
     value: string | number;
@@ -10,37 +12,61 @@ interface MetricsCardProps {
   loading?: boolean;
 }
 
-export function MetricsCard({ title, metrics, loading }: MetricsCardProps) {
+export function MetricsCard({ title, subtitle, liveLabel, metrics, loading }: MetricsCardProps) {
   if (loading) {
     return (
-      <div className="card">
+      <div className="card metricsCard">
         <div className="cardHeader">
-          <div className="h3">{title}</div>
+          <div className="row metricsCardHeader">
+            <div className="metricsCardTitleStack">
+              <div className="h2">{title}</div>
+              {subtitle ? <div className="help">{subtitle}</div> : null}
+            </div>
+            {liveLabel ? (
+              <span className="pill metricsLivePill" aria-live="polite">
+                <span className="liveDot" aria-hidden="true" />
+                <span>{liveLabel}</span>
+              </span>
+            ) : null}
+          </div>
         </div>
         <div className="cardBody">
-          <div className="skeleton skeletonKpi" />
-          <div className="skeleton skeletonKpi" style={{ marginTop: '0.5rem' }} />
+          <div className="metricsGrid" aria-hidden="true">
+            <div className="skeleton skeletonMetricTile" />
+            <div className="skeleton skeletonMetricTile" />
+            <div className="skeleton skeletonMetricTile" />
+            <div className="skeleton skeletonMetricTile" />
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="card">
+    <div className="card metricsCard">
       <div className="cardHeader">
-        <div className="h3">{title}</div>
+        <div className="row metricsCardHeader">
+          <div className="metricsCardTitleStack">
+            <div className="h2">{title}</div>
+            {subtitle ? <div className="help">{subtitle}</div> : null}
+          </div>
+          {liveLabel ? (
+            <span className="pill metricsLivePill" aria-live="polite">
+              <span className="liveDot" aria-hidden="true" />
+              <span>{liveLabel}</span>
+            </span>
+          ) : null}
+        </div>
       </div>
       <div className="cardBody">
-        <div className="metricsGrid">
+        <dl className="metricsGrid" aria-label={title}>
           {metrics.map((metric, i) => (
-            <div key={i} className="metricItem">
-              <div className="metricLabel muted text-xs">{metric.label}</div>
-              <div className="metricValue" data-variant={metric.variant || 'neutral'}>
-                {metric.value}
-              </div>
+            <div key={`${metric.label}-${i}`} className="metricTile">
+              <dt className="metricLabel">{metric.label}</dt>
+              <dd className="metricValue" data-variant={metric.variant || 'neutral'}>{metric.value}</dd>
             </div>
           ))}
-        </div>
+        </dl>
       </div>
     </div>
   );

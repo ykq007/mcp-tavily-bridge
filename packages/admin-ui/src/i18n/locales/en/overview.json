@@ -13,6 +13,18 @@
     "usage": "Usage",
     "usageHint": "Last 10 events"
   },
+  "metrics": {
+    "realtime": "Real-time Metrics",
+    "subtitle": "Traffic, health, and cost snapshot",
+    "live": "Live",
+    "requestsPerMinute": "Requests / min",
+    "requestsPerHour": "Requests / hour",
+    "activeTokens": "Active Tokens",
+    "activeKeys": "Active Keys",
+    "unhealthyKeys": "Unhealthy Keys",
+    "tavilyCost": "Tavily Credits (30d)",
+    "braveCost": "Brave Est. Cost (30d)"
+  },
   "recentUsage": {
     "title": "Recent usage",
     "subtitle": "Newest first"

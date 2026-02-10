@@ -968,6 +968,85 @@ html[data-theme='dark'] .pill {
   transform: translateX(0);
 }
 
+/* Metrics Card */
+.metricsCardHeader {
+  align-items: flex-start;
+}
+
+.metricsCardTitleStack {
+  display: grid;
+  gap: 4px;
+}
+
+.metricsLivePill {
+  font-size: 12px;
+  font-weight: 650;
+  padding: 6px 10px;
+  user-select: none;
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--success);
+  box-shadow: 0 0 0 rgba(34, 197, 94, 0.4);
+  animation: livePulse 2s infinite;
+}
+
+@keyframes livePulse {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.35); }
+  70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liveDot { animation: none; }
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.metricTile {
+  background: color-mix(in srgb, var(--panel-solid) 92%, var(--surface-hover) 8%);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.metricLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-weight: 650;
+  margin: 0;
+}
+
+.metricValue {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metricValue[data-variant='success'] { color: var(--success); }
+.metricValue[data-variant='warning'] { color: var(--warning); }
+.metricValue[data-variant='danger'] { color: var(--danger); }
+
 .dialogOverlay {
   position: fixed;
   inset: 0;
@@ -1105,6 +1184,10 @@ html[data-theme='dark'] .pill {
 
 .skeletonKpi {
   height: 120px;
+}
+
+.skeletonMetricTile {
+  height: 72px;
 }
 
 .skeletonTableRow {

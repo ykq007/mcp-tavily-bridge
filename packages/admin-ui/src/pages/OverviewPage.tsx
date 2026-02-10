@@ -169,41 +169,43 @@ export function OverviewPage({
       {/* Real-time Metrics Section */}
       <div className="overviewBentoRow">
         <MetricsCard
-          title={t('metrics.realtime', 'Real-time Metrics')}
+          title={t('metrics.realtime')}
+          subtitle={t('metrics.subtitle')}
+          liveLabel={t('metrics.live')}
           loading={loading && !data}
           metrics={[
             {
-              label: t('metrics.requestsPerMinute', 'Requests/min'),
+              label: t('metrics.requestsPerMinute'),
               value: data?.metrics?.requestsPerMinute ?? 0,
               variant: 'neutral'
             },
             {
-              label: t('metrics.requestsPerHour', 'Requests/hour'),
+              label: t('metrics.requestsPerHour'),
               value: data?.metrics?.requestsPerHour ?? 0,
               variant: 'neutral'
             },
             {
-              label: t('metrics.activeTokens', 'Active Tokens'),
+              label: t('metrics.activeTokens'),
               value: data?.metrics?.activeTokens ?? 0,
               variant: 'success'
             },
             {
-              label: t('metrics.activeKeys', 'Active Keys'),
+              label: t('metrics.activeKeys'),
               value: data?.metrics?.keyPool?.active ?? 0,
               variant: 'success'
             },
             {
-              label: t('metrics.unhealthyKeys', 'Unhealthy Keys'),
+              label: t('metrics.unhealthyKeys'),
               value: data?.metrics?.keyPool?.unhealthy ?? 0,
-              variant: (data?.metrics?.keyPool?.unhealthy ?? 0) > 0 ? 'warning' : 'neutral'
+              variant: (data?.metrics?.keyPool?.unhealthy ?? 0) > 0 ? 'danger' : 'neutral'
             },
             {
-              label: t('metrics.tavilyCost', 'Tavily Credits (30d)'),
+              label: t('metrics.tavilyCost'),
               value: data?.costEstimate?.summary?.tavilyCreditsUsed ?? 0,
               variant: 'neutral'
             },
             {
-              label: t('metrics.braveCost', 'Brave Est. Cost (30d)'),
+              label: t('metrics.braveCost'),
               value: `$${(data?.costEstimate?.summary?.braveEstimatedCostUsd ?? 0).toFixed(2)}`,
               variant: 'neutral'
             }
