@@ -31,6 +31,7 @@ export function SettingsPage({
   const [savingServerStrategy, setSavingServerStrategy] = useState(false);
   const [searchSourceModeDraft, setSearchSourceModeDraft] = useState<SearchSourceMode>('brave_prefer_tavily_fallback');
   const [savingSearchSourceMode, setSavingSearchSourceMode] = useState(false);
+  const [savingResearch, setSavingResearch] = useState(false);
   const baseUrlNeedsScheme = useMemo(() => value.apiBaseUrl.trim() !== '' && !/^https?:\/\//.test(value.apiBaseUrl.trim()), [value.apiBaseUrl]);
 
   useEffect(() => {
@@ -94,6 +95,25 @@ export function SettingsPage({
       toast.push({ title: t('toast.updateFailed'), message: msg });
     } finally {
       setSavingSearchSourceMode(false);
+    }
+  }
+
+  async function toggleResearch(enabled: boolean) {
+    if (!signedIn) {
+      toast.push({ title: t('toast.signInRequired'), message: t('toast.signInRequiredMessage') });
+      return;
+    }
+    setSavingResearch(true);
+    try {
+      const res = await api.updateServerInfo({ researchEnabled: enabled });
+      setServerInfo(res);
+      const status = res.researchEnabled ? t('server.research.enabled').toLowerCase() : t('server.research.disabled').toLowerCase();
+      toast.push({ title: t('toast.researchToggled'), message: t('toast.researchToggledMessage', { status }) });
+    } catch (e: any) {
+      const msg = typeof e?.message === 'string' ? e.message : tc('errors.unknownError');
+      toast.push({ title: t('toast.updateFailed'), message: msg });
+    } finally {
+      setSavingResearch(false);
     }
   }
 
@@ -319,6 +339,24 @@ export function SettingsPage({
                         {t('server.searchSourceMode.combinedUnavailableWarning')}
                       </div>
                     ) : null}
+
+                    <div className="flex gap-3 items-center mt-4">
+                      <div className="help">{t('server.research.label')}</div>
+                      <span className="badge mono" data-variant={serverInfo.researchEnabled ? 'success' : 'danger'}>
+                        {serverInfo.researchEnabled ? t('server.research.enabled') : t('server.research.disabled')}
+                      </span>
+                    </div>
+                    <div className="flex gap-3 items-center flex-wrap">
+                      <button
+                        className="btn btn--sm"
+                        data-variant={serverInfo.researchEnabled ? 'danger' : 'primary'}
+                        onClick={() => toggleResearch(!serverInfo.researchEnabled)}
+                        disabled={savingResearch}
+                      >
+                        {savingResearch ? tc('status.saving') : (serverInfo.researchEnabled ? t('server.research.disabled') : t('server.research.enabled'))}
+                      </button>
+                    </div>
+                    <div className="help">{t('server.research.help')}</div>
                   </div>
                 ) : (
                   <div className="help">{tc('status.loading')}</div>

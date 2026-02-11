@@ -147,7 +147,7 @@ export async function handleMcpRequest(c: Context<{ Bindings: Env }>): Promise<R
         response = {
           jsonrpc: '2.0',
           id,
-          result: { tools: getToolsList() },
+          result: { tools: getToolsList(c) },
         };
         break;
 
@@ -271,6 +271,12 @@ async function handleTavilyTool(
         result = await tavilyMap(keyInfo.apiKey, args as any);
         break;
       case 'tavily_research':
+        if (c.env.TAVILY_RESEARCH_ENABLED === 'false') {
+          return {
+            content: [{ type: 'text', text: 'Tavily Research is disabled by the server administrator.' }],
+            isError: true,
+          };
+        }
         result = await tavilyResearch(keyInfo.apiKey, args as any);
         break;
       default:
@@ -554,8 +560,9 @@ async function handleBraveTool(
   }
 }
 
-function getToolsList() {
-  return [
+function getToolsList(c: Context<{ Bindings: Env }>) {
+  const researchEnabled = c.env.TAVILY_RESEARCH_ENABLED !== 'false';
+  const tools = [
     {
       name: 'tavily_search',
       description: 'Search the web for current information on any topic. Use for news, facts, or data beyond your knowledge cutoff. Returns snippets and source URLs.',
@@ -629,7 +636,7 @@ function getToolsList() {
         required: ['url'],
       },
     },
-    {
+    ...(researchEnabled ? [{
       name: 'tavily_research',
       description: 'Perform comprehensive research on a given topic or question. Use this tool when you need to gather information from multiple sources to answer a question or complete a task. Returns a detailed response based on the research findings.',
       inputSchema: {
@@ -640,7 +647,7 @@ function getToolsList() {
         },
         required: ['input'],
       },
-    },
+    }] : []),
     {
       name: 'brave_web_search',
       description: 'Performs a web search using the Brave Search API. Use for general web searches for information, facts, and current topics. Returns a JSON array of results.',
@@ -667,4 +674,5 @@ function getToolsList() {
       },
     },
   ];
+  return tools;
 }

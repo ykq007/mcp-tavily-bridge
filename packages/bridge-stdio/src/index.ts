@@ -73,7 +73,8 @@ async function main(): Promise<void> {
     braveMaxQueueMs,
     getAuthToken: () => rawToken,
     getDefaultParameters: () => getDefaultParametersFromEnv(),
-    getSearchSourceMode: () => parsed.value.searchSourceMode
+    getSearchSourceMode: () => parsed.value.searchSourceMode,
+    getResearchEnabled: () => process.env.TAVILY_RESEARCH_ENABLED !== 'false'
   });
 
   const transport = new StdioServerTransport();

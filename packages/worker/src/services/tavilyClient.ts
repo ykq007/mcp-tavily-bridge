@@ -36,11 +36,13 @@ export interface TavilyMapResult {
 }
 
 export interface TavilyResearchResult {
-  answer: string;
-  sources: Array<{
+  content?: string;
+  sources?: Array<{
     title: string;
     url: string;
+    favicon?: string;
   }>;
+  error?: string;
 }
 
 export async function tavilySearch(
@@ -158,7 +160,15 @@ export async function tavilyResearch(
     model?: 'mini' | 'pro' | 'auto';
   }
 ): Promise<TavilyResearchResult> {
-  const response = await fetch(`${TAVILY_API_BASE}/research`, {
+  const INITIAL_POLL_INTERVAL = 2000;
+  const MAX_POLL_INTERVAL = 10000;
+  const POLL_BACKOFF_FACTOR = 1.5;
+  const MAX_PRO_POLL_DURATION = 900000;
+  const MAX_MINI_POLL_DURATION = 300000;
+  const maxPollDuration = params.model === 'mini' ? MAX_MINI_POLL_DURATION : MAX_PRO_POLL_DURATION;
+
+  // Step 1: Create research task
+  const startResponse = await fetch(`${TAVILY_API_BASE}/research`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -167,7 +177,55 @@ export async function tavilyResearch(
     body: JSON.stringify(params)
   });
 
-  return handleTavilyResponse(response);
+  const startBody = await handleTavilyResponse<{ request_id?: string; status?: string }>(startResponse);
+  const requestId = startBody?.request_id;
+  if (!requestId) {
+    return { error: 'No request_id returned from research endpoint' };
+  }
+
+  // Step 2: Poll for completion
+  let pollInterval = INITIAL_POLL_INTERVAL;
+  let totalElapsed = 0;
+  while (totalElapsed < maxPollDuration) {
+    await sleep(pollInterval);
+    totalElapsed += pollInterval;
+
+    const pollResponse = await fetch(`${TAVILY_API_BASE}/research/${encodeURIComponent(requestId)}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      }
+    });
+
+    const pollText = await pollResponse.text();
+    let pollBody: any;
+    try {
+      pollBody = JSON.parse(pollText);
+    } catch {
+      pollBody = {};
+    }
+
+    if (!pollResponse.ok && pollResponse.status !== 202) {
+      const message = extractErrorMessage(pollBody) || pollResponse.statusText || `HTTP ${pollResponse.status}`;
+      throw new TavilyError(message, pollResponse.status);
+    }
+
+    const status = pollBody?.status;
+    if (status === 'completed') {
+      return { content: pollBody?.content || '', sources: pollBody?.sources };
+    }
+    if (status === 'failed') {
+      return { error: 'Research task failed' };
+    }
+
+    pollInterval = Math.min(pollInterval * POLL_BACKOFF_FACTOR, MAX_POLL_INTERVAL);
+  }
+
+  return { error: 'Research task timed out' };
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(r => setTimeout(r, ms));
 }
 
 async function handleTavilyResponse<T>(response: Response): Promise<T> {
@@ -184,7 +242,7 @@ async function handleTavilyResponse<T>(response: Response): Promise<T> {
     let message = response.statusText;
     try {
       const body = JSON.parse(text);
-      if (body.message) message = body.message;
+      message = extractErrorMessage(body) || message || `HTTP ${response.status}`;
     } catch {}
 
     throw new TavilyError(message, response.status);
@@ -195,6 +253,15 @@ async function handleTavilyResponse<T>(response: Response): Promise<T> {
   } catch {
     throw new TavilyError('Invalid JSON response', response.status);
   }
+}
+
+function extractErrorMessage(body: any): string | undefined {
+  if (!body) return undefined;
+  if (typeof body.detail === 'string' && body.detail) return body.detail;
+  if (typeof body.detail?.error === 'string' && body.detail.error) return body.detail.error;
+  if (typeof body.message === 'string' && body.message) return body.message;
+  if (typeof body.error === 'string' && body.error) return body.error;
+  return undefined;
 }
 
 export class TavilyError extends Error {

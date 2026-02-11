@@ -34,6 +34,7 @@ type CreateCombinedProxyServerOptions = {
   getAuthToken?: (ctx: unknown) => string | undefined;
   getSearchSourceMode?: SearchSourceModeProvider;
   getAllowedTools?: (ctx: unknown) => unknown | Promise<unknown>;  // Phase 3.4: Tool scoping
+  getResearchEnabled?: () => boolean | Promise<boolean>;
 };
 
 export function createCombinedProxyServer({
@@ -46,7 +47,8 @@ export function createCombinedProxyServer({
   getDefaultParameters,
   getAuthToken,
   getSearchSourceMode,
-  getAllowedTools  // Phase 3.4: Tool scoping
+  getAllowedTools,  // Phase 3.4: Tool scoping
+  getResearchEnabled
 }: CreateCombinedProxyServerOptions): Server {
   const server = new Server(
     { name: serverName, version: serverVersion },
@@ -58,7 +60,11 @@ export function createCombinedProxyServer({
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return { tools: [...tavilyToolsV0216, ...braveToolsV0100] };
+    const researchEnabled = await getResearchEnabled?.() ?? true;
+    const tavilyTools = researchEnabled
+      ? tavilyToolsV0216
+      : tavilyToolsV0216.filter(t => t.name !== 'tavily_research');
+    return { tools: [...tavilyTools, ...braveToolsV0100] };
   });
 
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
@@ -123,6 +129,10 @@ export function createCombinedProxyServer({
           return textResult(formatMapResultsV0216(response));
         }
         case 'tavily_research': {
+          const researchEnabled = await getResearchEnabled?.() ?? true;
+          if (!researchEnabled) {
+            return toolError('Tavily Research is disabled by the server administrator.');
+          }
           const response = await tavilyClient.research(args as any);
           return textResult(formatResearchResultsV0216(response));
         }
@@ -157,7 +167,7 @@ export function createCombinedProxyServer({
       }
     } catch (error) {
       if (isTavilyHttpError(error)) {
-        return toolError(`Tavily API error: ${(error as TavilyHttpError).tavilyMessage ?? error.message}`);
+        return toolError(`Tavily API error: ${(error as TavilyHttpError).tavilyMessage || error.message}`);
       }
       if (isBraveHttpError(error)) {
         const details = (error as BraveHttpError).braveMessage ?? error.message;

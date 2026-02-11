@@ -113,6 +113,7 @@ export type ServerInfoDto = {
   tavilyKeySelectionStrategy: 'round_robin' | 'random';
   searchSourceMode: SearchSourceMode;
   braveSearchEnabled: boolean;
+  researchEnabled: boolean;
 };
 
 export type CostEstimateDto = {
@@ -201,7 +202,7 @@ export class AdminApiError extends Error {
 
 export type AdminApi = {
   getServerInfo: () => Promise<ServerInfoDto>;
-  updateServerInfo: (input: Partial<Pick<ServerInfoDto, 'tavilyKeySelectionStrategy' | 'searchSourceMode'>>) => Promise<ServerInfoDto & { ok: true }>;
+  updateServerInfo: (input: Partial<Pick<ServerInfoDto, 'tavilyKeySelectionStrategy' | 'searchSourceMode' | 'researchEnabled'>>) => Promise<ServerInfoDto & { ok: true }>;
 
   getMetrics: () => Promise<MetricsDto>;
 

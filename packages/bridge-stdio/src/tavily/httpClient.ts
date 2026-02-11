@@ -47,8 +47,20 @@ async function parseOrThrow(res: Response) {
   if (res.ok) return body;
   if (res.status === 401) throw new Error('Invalid API key');
   if (res.status === 429) throw new Error('Usage limit exceeded');
-  const message = typeof body?.message === 'string' ? body.message : res.statusText;
+  const message = extractErrorMessage(body) || res.statusText || `HTTP ${res.status}`;
   throw new TavilyHttpError(`HTTP ${res.status}`, { status: res.status, tavilyMessage: message });
+}
+
+function extractErrorMessage(body: any): string | undefined {
+  if (!body) return undefined;
+  // Tavily API uses { detail: { error: "..." } } or { detail: "..." }
+  if (typeof body.detail === 'string' && body.detail) return body.detail;
+  if (typeof body.detail?.error === 'string' && body.detail.error) return body.detail.error;
+  // Some endpoints use { message: "..." }
+  if (typeof body.message === 'string' && body.message) return body.message;
+  // Fallback: { error: "..." }
+  if (typeof body.error === 'string' && body.error) return body.error;
+  return undefined;
 }
 
 function safeJson(text: string): any {

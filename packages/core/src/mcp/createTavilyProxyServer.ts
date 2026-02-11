@@ -18,6 +18,7 @@ type CreateTavilyProxyServerOptions = {
   tavilyClient: TavilyClient;
   getDefaultParameters?: TavilyDefaultParametersProvider;
   getAuthToken?: (ctx: unknown) => string | undefined;
+  getResearchEnabled?: () => boolean | Promise<boolean>;
 };
 
 export function createTavilyProxyServer({
@@ -25,7 +26,8 @@ export function createTavilyProxyServer({
   serverVersion,
   tavilyClient,
   getDefaultParameters,
-  getAuthToken
+  getAuthToken,
+  getResearchEnabled
 }: CreateTavilyProxyServerOptions): Server {
   const server = new Server(
     { name: serverName, version: serverVersion },
@@ -37,7 +39,11 @@ export function createTavilyProxyServer({
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return { tools: tavilyToolsV0216 };
+    const researchEnabled = await getResearchEnabled?.() ?? true;
+    const tools = researchEnabled
+      ? tavilyToolsV0216
+      : tavilyToolsV0216.filter(t => t.name !== 'tavily_research');
+    return { tools };
   });
 
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
@@ -78,6 +84,10 @@ export function createTavilyProxyServer({
           return textResult(formatMapResultsV0216(response));
         }
         case 'tavily_research': {
+          const researchEnabled = await getResearchEnabled?.() ?? true;
+          if (!researchEnabled) {
+            return toolError('Tavily Research is disabled by the server administrator.');
+          }
           const response = await tavilyClient.research(args as any);
           return textResult(formatResearchResultsV0216(response));
         }
@@ -86,7 +96,7 @@ export function createTavilyProxyServer({
       }
     } catch (error) {
       if (isTavilyHttpError(error)) {
-        return toolError(`Tavily API error: ${(error as TavilyHttpError).tavilyMessage ?? error.message}`);
+        return toolError(`Tavily API error: ${(error as TavilyHttpError).tavilyMessage || error.message}`);
       }
       throw error;
     }

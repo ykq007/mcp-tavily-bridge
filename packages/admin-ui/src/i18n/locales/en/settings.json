@@ -50,6 +50,12 @@
       "braveUnavailableWarning": "Warning: Brave Search is not configured. This option will fail.",
       "combinedUnavailableWarning": "Warning: Combined mode requires active API keys for BOTH Tavily and Brave.",
       "costNote": "Note: Combined mode queries both APIs in parallel (2x cost per search)."
+    },
+    "research": {
+      "label": "Tavily Research",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "help": "Enable or disable the tavily_research tool. When disabled, the tool is hidden from clients and calls are rejected. Useful when your Tavily plan does not include research credits."
     }
   },
   "rotation": {
@@ -66,6 +72,8 @@
     "updatedMessage": "Upstream key selection set to {{strategy}}.",
     "searchSourceModeUpdated": "Search source mode updated",
     "searchSourceModeUpdatedMessage": "Search source mode set to {{mode}}.",
+    "researchToggled": "Research setting updated",
+    "researchToggledMessage": "Tavily Research is now {{status}}.",
     "updateFailed": "Update failed",
     "connected": "Connected",
     "connectedMessage": "Admin API authenticated successfully.",

@@ -50,6 +50,12 @@
       "braveUnavailableWarning": "警告：服务器未配置 Brave 搜索。此选项将会失败。",
       "combinedUnavailableWarning": "警告：合并模式需要同时配置 Tavily 和 Brave 的 API 密钥。",
       "costNote": "注意：合并模式会并行查询两个 API（每次搜索消耗 2 倍配额）。"
+    },
+    "research": {
+      "label": "Tavily Research",
+      "enabled": "已启用",
+      "disabled": "已禁用",
+      "help": "启用或禁用 tavily_research 工具。禁用时，该工具对客户端不可见且调用会被拒绝。适用于 Tavily 计划不包含 Research 额度的情况。"
     }
   },
   "rotation": {
@@ -66,6 +72,8 @@
     "updatedMessage": "上游密钥选择已设置为 {{strategy}}。",
     "searchSourceModeUpdated": "搜索源模式已更新",
     "searchSourceModeUpdatedMessage": "搜索源模式已设置为 {{mode}}。",
+    "researchToggled": "Research 设置已更新",
+    "researchToggledMessage": "Tavily Research 已{{status}}。",
     "updateFailed": "更新失败",
     "connected": "已连接",
     "connectedMessage": "管理员 API 认证成功。",

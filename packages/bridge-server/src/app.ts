@@ -299,6 +299,7 @@ export function createBridgeApp(options: CreateBridgeAppOptions = {}): express.E
                 return { ...envDefaults, ...headerDefaults };
               },
               getSearchSourceMode: () => serverSettings.getSearchSourceMode(),
+              getResearchEnabled: () => serverSettings.getResearchEnabled(),
               getAllowedTools: () => {
                 const ctx = requestContext.getStore();
                 return ctx?.allowedTools;

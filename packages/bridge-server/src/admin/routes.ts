@@ -78,16 +78,18 @@ export function registerAdminRoutes(
     res.setHeader('Cache-Control', 'no-store');
     const tavilyKeySelectionStrategy = await opts.serverSettings.getTavilyKeySelectionStrategy();
     const searchSourceMode = await opts.serverSettings.getSearchSourceMode();
+    const researchEnabled = await opts.serverSettings.getResearchEnabled();
     const braveKeyCount = await prisma.braveKey.count({ where: { status: 'active' } });
     res.json({
       tavilyKeySelectionStrategy,
       searchSourceMode,
-      braveSearchEnabled: braveKeyCount > 0
+      braveSearchEnabled: braveKeyCount > 0,
+      researchEnabled
     });
   }));
 
   app.patch(p('/server-info'), requireAdmin, asyncHandler(async (req, res) => {
-    const { tavilyKeySelectionStrategy, searchSourceMode } = req.body ?? {};
+    const { tavilyKeySelectionStrategy, searchSourceMode, researchEnabled } = req.body ?? {};
 
     // Validate tavilyKeySelectionStrategy if provided
     if (tavilyKeySelectionStrategy !== undefined) {
@@ -108,9 +110,19 @@ export function registerAdminRoutes(
       await opts.serverSettings.setSearchSourceMode(searchSourceMode as SearchSourceMode);
     }
 
+    // Validate researchEnabled if provided
+    if (researchEnabled !== undefined) {
+      if (typeof researchEnabled !== 'boolean') {
+        res.status(400).json({ error: 'researchEnabled must be a boolean' });
+        return;
+      }
+      await opts.serverSettings.setResearchEnabled(researchEnabled);
+    }
+
     // Return updated values
     const updatedStrategy = await opts.serverSettings.getTavilyKeySelectionStrategy();
     const updatedMode = await opts.serverSettings.getSearchSourceMode();
+    const updatedResearchEnabled = await opts.serverSettings.getResearchEnabled();
     const braveKeyCount = await prisma.braveKey.count({ where: { status: 'active' } });
 
     res.setHeader('Cache-Control', 'no-store');
@@ -118,7 +130,8 @@ export function registerAdminRoutes(
       ok: true,
       tavilyKeySelectionStrategy: updatedStrategy,
       searchSourceMode: updatedMode,
-      braveSearchEnabled: braveKeyCount > 0
+      braveSearchEnabled: braveKeyCount > 0,
+      researchEnabled: updatedResearchEnabled
     });
   }));
 
