@@ -1090,16 +1090,45 @@ export function registerAdminRoutes(
     const braveItems = body.brave ?? [];
 
     const summary = {
-      tavily: { total: tavilyItems.length, imported: 0, failed: 0, renamed: 0 },
-      brave: { total: braveItems.length, imported: 0, failed: 0, renamed: 0 },
+      tavily: { total: tavilyItems.length, imported: 0, failed: 0, renamed: 0, skipped: 0 },
+      brave: { total: braveItems.length, imported: 0, failed: 0, renamed: 0, skipped: 0 },
       total: 0,
       imported: 0,
       failed: 0,
-      renamed: 0
+      renamed: 0,
+      skipped: 0
     };
 
     const renamed: Array<{ provider: 'tavily' | 'brave'; from: string; to: string }> = [];
     const errors: Array<{ provider: 'tavily' | 'brave'; index: number; label: string; error: string }> = [];
+    const skipped: Array<{ provider: 'tavily' | 'brave'; label: string; reason: string }> = [];
+
+    // 艹，先把现有的所有 API keys 解密出来，检查重复用
+    const [existingTavilyKeys, existingBraveKeys] = await Promise.all([
+      prisma.tavilyKey.findMany({ select: { id: true, keyEncrypted: true } }),
+      prisma.braveKey.findMany({ select: { id: true, keyEncrypted: true } })
+    ]);
+
+    const existingTavilyApiKeys = new Set<string>();
+    for (const k of existingTavilyKeys) {
+      try {
+        const apiKey = decryptAes256Gcm(Buffer.from(k.keyEncrypted), encryptionKey);
+        existingTavilyApiKeys.add(apiKey);
+      } catch (err) {
+        // 解密失败就跳过，不影响导入流程
+        console.error(`Failed to decrypt existing Tavily key ${k.id}:`, err);
+      }
+    }
+
+    const existingBraveApiKeys = new Set<string>();
+    for (const k of existingBraveKeys) {
+      try {
+        const apiKey = decryptAes256Gcm(Buffer.from(k.keyEncrypted), encryptionKey);
+        existingBraveApiKeys.add(apiKey);
+      } catch (err) {
+        console.error(`Failed to decrypt existing Brave key ${k.id}:`, err);
+      }
+    }
 
     // Import Tavily keys
     for (let i = 0; i < tavilyItems.length; i++) {
@@ -1112,6 +1141,13 @@ export function registerAdminRoutes(
       if (typeof item.apiKey !== 'string' || !item.apiKey.trim()) {
         errors.push({ provider: 'tavily', index: i, label: item.label, error: 'apiKey is required' });
         summary.tavily.failed++;
+        continue;
+      }
+
+      // 艹，检查这个 API key 是不是已经存在了
+      if (existingTavilyApiKeys.has(item.apiKey)) {
+        summary.tavily.skipped++;
+        skipped.push({ provider: 'tavily', label: item.label, reason: 'API key already exists' });
         continue;
       }
 
@@ -1130,6 +1166,9 @@ export function registerAdminRoutes(
         });
 
         summary.tavily.imported++;
+        // 导入成功后，把这个 key 加到已存在集合里，避免同一批次内重复导入
+        existingTavilyApiKeys.add(item.apiKey);
+
         if (result.renamedFrom) {
           summary.tavily.renamed++;
           renamed.push({ provider: 'tavily', from: result.renamedFrom, to: result.labelUsed });
@@ -1154,6 +1193,13 @@ export function registerAdminRoutes(
         continue;
       }
 
+      // 艹，检查这个 API key 是不是已经存在了
+      if (existingBraveApiKeys.has(item.apiKey)) {
+        summary.brave.skipped++;
+        skipped.push({ provider: 'brave', label: item.label, reason: 'API key already exists' });
+        continue;
+      }
+
       try {
         const keyEncrypted = encryptAes256Gcm(item.apiKey, encryptionKey);
         const keyMasked = maskBraveApiKey(item.apiKey);
@@ -1167,6 +1213,9 @@ export function registerAdminRoutes(
         });
 
         summary.brave.imported++;
+        // 导入成功后，把这个 key 加到已存在集合里，避免同一批次内重复导入
+        existingBraveApiKeys.add(item.apiKey);
+
         if (result.renamedFrom) {
           summary.brave.renamed++;
           renamed.push({ provider: 'brave', from: result.renamedFrom, to: result.labelUsed });
@@ -1181,6 +1230,7 @@ export function registerAdminRoutes(
     summary.imported = summary.tavily.imported + summary.brave.imported;
     summary.failed = summary.tavily.failed + summary.brave.failed;
     summary.renamed = summary.tavily.renamed + summary.brave.renamed;
+    summary.skipped = summary.tavily.skipped + summary.brave.skipped;
 
     const outcome = summary.failed > 0 ? 'partial' : 'success';
     await prisma.auditLog.create({
@@ -1189,7 +1239,7 @@ export function registerAdminRoutes(
         outcome,
         ip,
         userAgent,
-        detailsJson: { summary, renamedCount: renamed.length, errorCount: errors.length }
+        detailsJson: { summary, renamedCount: renamed.length, skippedCount: skipped.length, errorCount: errors.length }
       }
     }).catch(() => {});
 
@@ -1197,6 +1247,7 @@ export function registerAdminRoutes(
       ok: true,
       summary,
       renamed,
+      skipped,
       errors
     });
   }));
