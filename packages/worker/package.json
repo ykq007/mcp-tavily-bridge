@@ -7,7 +7,7 @@
     "dev": "wrangler dev",
     "build": "echo 'No build step required - Wrangler handles TypeScript'",
     "build:admin": "cd ../admin-ui && npm run build && cp -r dist/* ../worker/public/admin/",
-    "deploy": "wrangler d1 execute DB --remote --file=migrations/0001_init.sql --yes && wrangler deploy --env=",
+    "deploy": "npm run build:admin && wrangler d1 execute DB --remote --file=migrations/0001_init.sql --yes && wrangler deploy --env=",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "verify:deploy-button": "node scripts/verifyDeployButton.mjs",
