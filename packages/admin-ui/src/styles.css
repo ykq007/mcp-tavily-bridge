@@ -858,37 +858,42 @@ html[data-theme='dark'] .sidebarToggle:hover {
 .appFrame.sidebar-collapsed .navItem,
 .container.sidebar-collapsed .navItem {
   justify-content: center;
-  padding: 10px;
+  padding: 8px;
 }
 
 .appFrame.sidebar-collapsed .navItemIcon,
 .container.sidebar-collapsed .navItemIcon {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  color: var(--text);
 }
 
 .appFrame.sidebar-collapsed .themeToggle svg,
 .container.sidebar-collapsed .themeToggle svg,
 .appFrame.sidebar-collapsed .sidebarToggle svg,
 .container.sidebar-collapsed .sidebarToggle svg {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
 }
 
 .appFrame.sidebar-collapsed .themeToggle,
 .container.sidebar-collapsed .themeToggle {
   justify-content: center;
+  padding: 8px;
 }
 
 .appFrame.sidebar-collapsed .sidebarToggle,
 .container.sidebar-collapsed .sidebarToggle {
   justify-content: center;
+  padding: 8px;
 }
 
 .appFrame.sidebar-collapsed .navHeader,
 .container.sidebar-collapsed .navHeader {
   justify-content: center;
-  padding: 14px 10px;
+  padding: 12px 8px;
 }
 
 .topbar {
