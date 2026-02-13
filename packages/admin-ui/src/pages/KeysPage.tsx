@@ -18,6 +18,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { DataTable, type DataTableColumn } from '../ui/DataTable';
 import { ImportExportActions } from '../ui/ImportExportActions';
 import { FileImportDialog } from '../components/FileImportDialog';
+import { ClipboardImportDialog } from '../components/ClipboardImportDialog';
 
 type SortField = 'label' | 'status' | 'lastUsedAt' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
@@ -88,6 +89,7 @@ export function KeysPage({ api }: { api: AdminApi }) {
 
   // Import/Export state
   const [importOpen, setImportOpen] = useState(false);
+  const [clipboardImportOpen, setClipboardImportOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async () => {
@@ -413,10 +415,39 @@ export function KeysPage({ api }: { api: AdminApi }) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      const totalCount = data.tavily.length + data.brave.length;
+      const totalCount = (data.tavily?.length || 0) + (data.brave?.length || 0);
       toast.push({ title: t('export.success'), message: t('export.successMessage', { count: totalCount }), variant: 'success' });
     } catch (e: any) {
       toast.push({ title: t('export.failed'), message: typeof e?.message === 'string' ? e.message : tc('errors.unknownError'), variant: 'error' });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportToClipboard = async () => {
+    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      toast.push({
+        title: t('export.clipboardFailed'),
+        message: t('export.clipboardNotSupported'),
+        variant: 'error'
+      });
+      return;
+    }
+
+    setExporting(true);
+    try {
+      const data = await api.exportKeys();
+      const jsonString = JSON.stringify(data, null, 2);
+      await navigator.clipboard.writeText(jsonString);
+
+      const totalCount = (data.tavily?.length || 0) + (data.brave?.length || 0);
+      toast.push({ title: t('export.clipboardSuccess'), message: t('export.clipboardSuccessMessage', { count: totalCount }), variant: 'success' });
+    } catch (e: any) {
+      if (e.name === 'NotAllowedError') {
+        toast.push({ title: t('export.clipboardFailed'), message: t('export.clipboardPermissionDenied'), variant: 'error' });
+      } else {
+        toast.push({ title: t('export.clipboardFailed'), message: typeof e?.message === 'string' ? e.message : tc('errors.unknownError'), variant: 'error' });
+      }
     } finally {
       setExporting(false);
     }
@@ -501,8 +532,10 @@ export function KeysPage({ api }: { api: AdminApi }) {
             </div>
             <div className="flex gap-3 items-center">
               <ImportExportActions
-                onExport={handleExport}
-                onImport={() => setImportOpen(true)}
+                onExportToFile={handleExport}
+                onExportToClipboard={handleExportToClipboard}
+                onImportFromFile={() => setImportOpen(true)}
+                onImportFromClipboard={() => setClipboardImportOpen(true)}
                 loading={exporting}
               />
               <button className="btn" onClick={load} disabled={loading}>
@@ -1070,6 +1103,13 @@ export function KeysPage({ api }: { api: AdminApi }) {
       <FileImportDialog
         open={importOpen}
         onClose={() => setImportOpen(false)}
+        onConfirm={handleImport}
+      />
+
+      {/* Clipboard Import Dialog */}
+      <ClipboardImportDialog
+        open={clipboardImportOpen}
+        onClose={() => setClipboardImportOpen(false)}
         onConfirm={handleImport}
       />
     </div>

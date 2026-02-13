@@ -193,7 +193,15 @@
     "resultTitle": "导入完成",
     "resultSummary": "已导入 {{imported}} 个密钥，{{failed}} 个失败，{{renamed}} 个重命名。",
     "renamedKeys": "重命名的密钥（由于标签冲突）：",
-    "errors": "错误："
+    "errors": "错误：",
+    "fromFile": "从文件导入",
+    "fromClipboard": "从剪贴板导入",
+    "clipboardTitle": "从剪贴板导入",
+    "pasteJson": "在此粘贴 JSON 数据",
+    "pasteFromClipboard": "从剪贴板粘贴",
+    "pasteHelp": "粘贴导出的 JSON 数据，或点击按钮自动从剪贴板读取",
+    "clipboardReadFailed": "读取剪贴板失败。请手动粘贴或检查浏览器权限。",
+    "invalidJson": "JSON 格式无效。请检查您的数据。"
   },
   "export": {
     "button": "导出",
@@ -201,6 +209,13 @@
     "securityWarning": "导出的文件包含明文 API 密钥，请妥善保管。",
     "success": "密钥已导出",
     "successMessage": "已下载 {{count}} 个密钥",
-    "failed": "导出失败"
+    "failed": "导出失败",
+    "toFile": "导出到文件",
+    "toClipboard": "复制到剪贴板",
+    "clipboardSuccess": "密钥已复制到剪贴板",
+    "clipboardSuccessMessage": "已复制 {{count}} 个密钥到剪贴板",
+    "clipboardFailed": "复制到剪贴板失败",
+    "clipboardPermissionDenied": "剪贴板权限被拒绝。请在浏览器设置中允许访问剪贴板。",
+    "clipboardNotSupported": "您的浏览器不支持剪贴板操作。请使用文件导出功能。"
   }
 }

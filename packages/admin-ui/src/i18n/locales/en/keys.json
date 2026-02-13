@@ -193,7 +193,15 @@
     "resultTitle": "Import Complete",
     "resultSummary": "Imported {{imported}} keys, {{failed}} failed, {{renamed}} renamed.",
     "renamedKeys": "Renamed keys (due to label conflicts):",
-    "errors": "Errors:"
+    "errors": "Errors:",
+    "fromFile": "From File",
+    "fromClipboard": "From Clipboard",
+    "clipboardTitle": "Import from Clipboard",
+    "pasteJson": "Paste JSON data here",
+    "pasteFromClipboard": "Paste from Clipboard",
+    "pasteHelp": "Paste the exported JSON data or click the button to automatically read from clipboard",
+    "clipboardReadFailed": "Failed to read clipboard. Please paste manually or check browser permissions.",
+    "invalidJson": "Invalid JSON format. Please check your data."
   },
   "export": {
     "button": "Export",
@@ -201,6 +209,13 @@
     "securityWarning": "The exported file contains plaintext API keys. Store it securely.",
     "success": "Keys exported",
     "successMessage": "Downloaded {{count}} keys",
-    "failed": "Export failed"
+    "failed": "Export failed",
+    "toFile": "To File",
+    "toClipboard": "To Clipboard",
+    "clipboardSuccess": "Keys copied to clipboard",
+    "clipboardSuccessMessage": "Copied {{count}} keys to clipboard",
+    "clipboardFailed": "Copy to clipboard failed",
+    "clipboardPermissionDenied": "Clipboard permission denied. Please allow clipboard access in your browser settings.",
+    "clipboardNotSupported": "Your browser does not support clipboard operations. Please use file export instead."
   }
 }

@@ -4,7 +4,7 @@ import { Dialog } from '../ui/Dialog';
 import type { KeyExportDto, BatchImportResult } from '../lib/adminApi';
 import { parseJsonSafely, validateImportData, type ImportPreview } from '../lib/importUtils';
 
-export function FileImportDialog({
+export function ClipboardImportDialog({
   open,
   onClose,
   onConfirm
@@ -15,25 +15,25 @@ export function FileImportDialog({
 }) {
   const { t } = useTranslation('keys');
   const { t: tc } = useTranslation('common');
-  const [file, setFile] = useState<File | null>(null);
+  const [jsonText, setJsonText] = useState('');
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [parsing, setParsing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<BatchImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-
-    setFile(selectedFile);
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value;
+    setJsonText(text);
     setPreview(null);
     setError(null);
     setResult(null);
+
+    if (!text.trim()) return;
+
     setParsing(true);
 
     try {
-      const text = await selectedFile.text();
       const { data, error: parseError } = parseJsonSafely(text);
 
       if (parseError) {
@@ -45,21 +45,51 @@ export function FileImportDialog({
       const previewData = validateImportData(data);
       setPreview(previewData);
     } catch (err: any) {
-      setError(err instanceof Error ? err.message : 'Failed to parse JSON file');
+      setError(err instanceof Error ? err.message : 'Failed to parse JSON');
+    } finally {
+      setParsing(false);
+    }
+  };
+
+  const handlePasteFromClipboard = async () => {
+    if (!navigator.clipboard || !navigator.clipboard.readText) {
+      setError(t('import.clipboardReadFailed'));
+      return;
+    }
+
+    try {
+      const text = await navigator.clipboard.readText();
+      setJsonText(text);
+      setPreview(null);
+      setError(null);
+      setResult(null);
+      setParsing(true);
+
+      const { data, error: parseError } = parseJsonSafely(text);
+
+      if (parseError) {
+        setError(parseError);
+        setParsing(false);
+        return;
+      }
+
+      const previewData = validateImportData(data);
+      setPreview(previewData);
+    } catch (err: any) {
+      setError(err instanceof Error ? err.message : t('import.clipboardReadFailed'));
     } finally {
       setParsing(false);
     }
   };
 
   const handleImport = async () => {
-    if (!file || !preview) return;
+    if (!jsonText || !preview) return;
 
     setImporting(true);
     setError(null);
 
     try {
-      const text = await file.text();
-      const data = JSON.parse(text);
+      const data = JSON.parse(jsonText);
       const importResult = await onConfirm(data);
       setResult(importResult);
     } catch (err: any) {
@@ -70,7 +100,7 @@ export function FileImportDialog({
   };
 
   const handleClose = () => {
-    setFile(null);
+    setJsonText('');
     setPreview(null);
     setError(null);
     setResult(null);
@@ -80,22 +110,33 @@ export function FileImportDialog({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} title={t('import.title')}>
+    <Dialog open={open} onClose={handleClose} title={t('import.clipboardTitle')}>
       <div className="stack">
         {!result ? (
           <>
             <div className="stack">
-              <label className="label" htmlFor="import-file">
-                {t('import.selectFile')}
+              <label className="label" htmlFor="import-json">
+                {t('import.pasteJson')}
               </label>
-              <input
-                id="import-file"
-                type="file"
-                accept=".json,application/json"
-                onChange={handleFileChange}
+              <textarea
+                id="import-json"
+                value={jsonText}
+                onChange={handleTextChange}
                 disabled={importing}
                 className="input"
+                rows={10}
+                placeholder='{"schemaVersion": 1, "tavily": [...], "brave": [...]}'
+                style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
               />
+              <div className="help">{t('import.pasteHelp')}</div>
+              <button
+                className="btn"
+                onClick={handlePasteFromClipboard}
+                disabled={importing}
+                style={{ alignSelf: 'flex-start' }}
+              >
+                {t('import.pasteFromClipboard')}
+              </button>
             </div>
 
             {parsing && <div className="help">{t('import.parsing')}</div>}

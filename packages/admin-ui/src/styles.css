@@ -1818,6 +1818,42 @@ html {
   background: var(--primary-light);
 }
 
+/* Action Menu (Import/Export Dropdowns) */
+.actionMenu {
+  position: fixed;
+  background: var(--panel-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-dropdown);
+  min-width: 160px;
+}
+
+.actionMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-size: 13px;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.actionMenuItem:hover {
+  background: var(--surface-hover);
+}
+
+.actionMenuItem svg {
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
+}
+
 /* Key Reveal Cell */
 .keyReveal {
   display: flex;
