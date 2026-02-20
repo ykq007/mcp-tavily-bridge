@@ -173,6 +173,9 @@ export function createCombinedProxyServer({
         const details = (error as BraveHttpError).braveMessage ?? error.message;
         return toolError(`Brave API error: ${details}`);
       }
+      if (isBraveClientRuntimeError(error)) {
+        return toolError(`Brave API error: ${error.message}`);
+      }
       throw error;
     }
   });
@@ -227,7 +230,7 @@ async function handleBraveWebSearch(opts: {
     const response = await opts.braveClient.webSearch(opts.args as any, { defaults, maxWaitMs });
     return textResult(formatBraveWebResultsV0100(response));
   } catch (err: unknown) {
-    if (opts.braveOverflow === 'fallback_to_tavily' && (isBraveRateGateTimeoutError(err) || isBraveHttpError(err))) {
+    if (opts.braveOverflow === 'fallback_to_tavily' && isBraveFallbackToTavilyError(err)) {
       const response = await opts.tavilyClient.search({ query, max_results: maxResults }, { defaults });
       return textResult(formatBraveWebResultsFromTavilyV0100(response));
     }
@@ -393,7 +396,7 @@ async function handleBraveLocalSearch(opts: {
     const response = await opts.braveClient.localSearch(opts.args as any, { defaults, maxWaitMs });
     return textResult(formatBraveLocalResultsV0100(response));
   } catch (err: unknown) {
-    if (opts.braveOverflow === 'fallback_to_tavily' && (isBraveRateGateTimeoutError(err) || isBraveHttpError(err))) {
+    if (opts.braveOverflow === 'fallback_to_tavily' && isBraveFallbackToTavilyError(err)) {
       const response = await opts.tavilyClient.search({ query, max_results: maxResults }, { defaults });
       return textResult(formatBraveWebResultsFromTavilyV0100(response));
     }
@@ -516,4 +519,21 @@ function toolError(text: string): CallToolResult {
     content: [{ type: 'text', text }],
     isError: true
   };
+}
+
+function isBraveFallbackToTavilyError(err: unknown): boolean {
+  return isBraveRateGateTimeoutError(err) || isBraveHttpError(err) || isBraveClientRuntimeError(err);
+}
+
+function isBraveClientRuntimeError(err: unknown): err is Error {
+  if (!(err instanceof Error)) return false;
+  if (err.message === 'No Brave API keys available' || err.message === 'Invalid API key') {
+    return true;
+  }
+
+  const normalized = err.message.toLowerCase();
+  return (
+    normalized.includes('unable to authenticate data') ||
+    normalized.includes('unsupported state')
+  );
 }

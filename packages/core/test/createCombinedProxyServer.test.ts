@@ -50,6 +50,141 @@ describe('createCombinedProxyServer', () => {
     expect(parsed[0]?.title).toBe('t');
   });
 
+  it('falls back to Tavily when Brave has no available keys (web search)', async () => {
+    const tavily = stubTavilyClient();
+    const brave = stubBraveClient();
+
+    tavily.search = async () => ({
+      results: [{ title: 'From Tavily', url: 'https://tavily.com', content: 'fallback' }]
+    });
+    brave.webSearch = async () => {
+      throw new Error('No Brave API keys available');
+    };
+
+    const server = createCombinedProxyServer({
+      serverName: 'x',
+      serverVersion: '0',
+      tavilyClient: tavily,
+      braveClient: brave,
+      getAuthToken: () => 'tok'
+    });
+
+    const callHandler = (server as any)._requestHandlers.get('tools/call');
+    const result = await callHandler(
+      {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: 'brave_web_search', arguments: { query: 'hello', count: 1 } }
+      },
+      {}
+    );
+
+    expect(result.isError).toBeUndefined();
+    const parsed = JSON.parse(result.content?.[0]?.text);
+    expect(parsed[0]?.title).toBe('From Tavily');
+  });
+
+  it('falls back to Tavily when Brave key decryption fails (web search)', async () => {
+    const tavily = stubTavilyClient();
+    const brave = stubBraveClient();
+
+    tavily.search = async () => ({
+      results: [{ title: 'From Tavily', url: 'https://tavily.com', content: 'fallback' }]
+    });
+    brave.webSearch = async () => {
+      throw new Error('Unsupported state or unable to authenticate data');
+    };
+
+    const server = createCombinedProxyServer({
+      serverName: 'x',
+      serverVersion: '0',
+      tavilyClient: tavily,
+      braveClient: brave,
+      getAuthToken: () => 'tok'
+    });
+
+    const callHandler = (server as any)._requestHandlers.get('tools/call');
+    const result = await callHandler(
+      {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: 'brave_web_search', arguments: { query: 'hello', count: 1 } }
+      },
+      {}
+    );
+
+    expect(result.isError).toBeUndefined();
+    const parsed = JSON.parse(result.content?.[0]?.text);
+    expect(parsed[0]?.title).toBe('From Tavily');
+  });
+
+  it('falls back to Tavily when Brave key decryption fails (local search)', async () => {
+    const tavily = stubTavilyClient();
+    const brave = stubBraveClient();
+
+    tavily.search = async () => ({
+      results: [{ title: 'From Tavily', url: 'https://tavily.com', content: 'fallback' }]
+    });
+    brave.localSearch = async () => {
+      throw new Error('Unsupported state or unable to authenticate data');
+    };
+
+    const server = createCombinedProxyServer({
+      serverName: 'x',
+      serverVersion: '0',
+      tavilyClient: tavily,
+      braveClient: brave,
+      getAuthToken: () => 'tok'
+    });
+
+    const callHandler = (server as any)._requestHandlers.get('tools/call');
+    const result = await callHandler(
+      {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: 'brave_local_search', arguments: { query: 'coffee near me', count: 1 } }
+      },
+      {}
+    );
+
+    expect(result.isError).toBeUndefined();
+    const parsed = JSON.parse(result.content?.[0]?.text);
+    expect(parsed[0]?.title).toBe('From Tavily');
+  });
+
+  it('returns a tool error in brave_only mode when Brave has no available keys', async () => {
+    const brave = stubBraveClient();
+    brave.webSearch = async () => {
+      throw new Error('No Brave API keys available');
+    };
+
+    const server = createCombinedProxyServer({
+      serverName: 'x',
+      serverVersion: '0',
+      tavilyClient: stubTavilyClient(),
+      braveClient: brave,
+      getAuthToken: () => 'tok',
+      getSearchSourceMode: async () => 'brave_only'
+    });
+
+    const callHandler = (server as any)._requestHandlers.get('tools/call');
+    const result = await callHandler(
+      {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: 'brave_web_search', arguments: { query: 'hello', count: 1 } }
+      },
+      {}
+    );
+
+    expect(result.isError).toBe(true);
+    expect(result.content?.[0]?.text).toContain('Brave API error: No Brave API keys available');
+  });
+
   it('executes combined search when searchSourceMode is combined', async () => {
     const tavily = stubTavilyClient();
     const brave = stubBraveClient();

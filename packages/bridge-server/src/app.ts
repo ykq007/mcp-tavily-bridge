@@ -242,7 +242,7 @@ export function createBridgeApp(options: CreateBridgeAppOptions = {}): express.E
       return;
     }
 
-    if (ENABLE_TAVILY_CREDITS_CHECK && isToolsCallRequest(req.body)) {
+    if (ENABLE_TAVILY_CREDITS_CHECK && hasTavilyToolsCallRequest(req.body)) {
       const check = await pool.preflightCreditsCheck();
       if (!check.ok) {
         const retryAfter = check.retryAfterMs;
@@ -388,9 +388,16 @@ function parseBraveOverflowMode(raw: unknown, fallback: BraveOverflowMode = 'fal
   return fallback;
 }
 
-function isToolsCallRequest(body: any): boolean {
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+export function hasTavilyToolsCallRequest(body: unknown): boolean {
   if (!body) return false;
-  if (Array.isArray(body)) return body.some(isToolsCallRequest);
-  if (typeof body !== 'object') return false;
-  return body.method === 'tools/call';
+  if (Array.isArray(body)) return body.some(hasTavilyToolsCallRequest);
+  if (!isObjectRecord(body) || body.method !== 'tools/call') return false;
+
+  const params = isObjectRecord(body.params) ? body.params : undefined;
+  const toolName = params?.name;
+  return typeof toolName === 'string' && toolName.startsWith('tavily_');
 }
