@@ -1,22 +1,22 @@
 :root {
   /* ========================================
-     Design Tokens (2026 Design System)
+     Design Tokens (2026 Design System - Brutalist)
      ======================================== */
 
-  /* Spacing Scale (4px Grid) */
+  /* Spacing Scale (8px Grid - Brutalist) */
   --space-0: 0;
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-6: 48px;
+  --space-8: 64px;
+  --space-10: 80px;
+  --space-12: 96px;
 
-  /* Typography */
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Fira Sans', Arial, sans-serif;
-  --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  /* Typography (Brutalist - Arial/Helvetica) */
+  --font-sans: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+  --font-mono: 'Courier New', Courier, monospace;
 
   /* Font Size */
   --text-xs: 12px;
@@ -27,12 +27,12 @@
   --text-2xl: 24px;
   --text-3xl: 28px;
 
-  /* Font Weight */
+  /* Font Weight (Brutalist - Bold) */
   --font-normal: 400;
-  --font-medium: 500;
-  --font-semibold: 600;
+  --font-medium: 600;
+  --font-semibold: 700;
   --font-bold: 700;
-  --font-extrabold: 800;
+  --font-extrabold: 900;
 
   /* Line Height */
   --lh-tight: 1.25;
@@ -75,20 +75,20 @@
   --z-modal: 120;
   --z-toast: 140;
 
-  /* Shadows with depth levels */
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.06);
-  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.08);
+  /* Shadows (Brutalist - None) */
+  --shadow: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
 
-  /* Border Radius */
-  --radius: 8px;
-  --radius-sm: 6px;
-  --radius-lg: 12px;
+  /* Border Radius (Brutalist - Sharp Edges) */
+  --radius: 0;
+  --radius-sm: 0;
+  --radius-lg: 0;
 
-  /* Transitions */
-  --transition-fast: 120ms ease;
-  --transition-base: 150ms ease;
-  --transition-slow: 200ms ease;
+  /* Transitions (Brutalist - Instant) */
+  --transition-fast: 0ms;
+  --transition-base: 0ms;
+  --transition-slow: 0ms;
 }
 
 html[data-theme='dark'] {
@@ -110,8 +110,8 @@ html[data-theme='dark'] {
   --color-warning-light: rgba(245, 158, 11, 0.18);
   --color-danger-light: rgba(239, 68, 68, 0.16);
 
-  /* Shadow adjustments for dark mode */
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.16);
-  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.20);
+  /* Shadow adjustments for dark mode (Brutalist - None) */
+  --shadow: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
 }

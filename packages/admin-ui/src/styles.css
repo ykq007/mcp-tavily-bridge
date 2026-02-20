@@ -3,20 +3,20 @@
      Design Tokens (2026 Design System)
      ======================================== */
 
-  /* Spacing Scale (4px Grid) */
+  /* Spacing Scale (8px Grid - Brutalist) */
   --space-0: 0;
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-6: 48px;
+  --space-8: 64px;
+  --space-10: 80px;
+  --space-12: 96px;
 
-  /* Typography */
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Fira Sans', Arial, sans-serif;
-  --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  /* Typography (Brutalist - Arial/Helvetica) */
+  --font-sans: Arial, 'Helvetica Neue', Helvetica, sans-serif;
+  --font-mono: 'Courier New', Courier, monospace;
 
   /* Font Size */
   --text-xs: 12px;
@@ -27,12 +27,12 @@
   --text-2xl: 24px;
   --text-3xl: 28px;
 
-  /* Font Weight */
+  /* Font Weight (Brutalist - Bold) */
   --font-normal: 400;
-  --font-medium: 500;
-  --font-semibold: 600;
+  --font-medium: 600;
+  --font-semibold: 700;
   --font-bold: 700;
-  --font-extrabold: 800;
+  --font-extrabold: 900;
 
   /* Line Height */
   --lh-tight: 1.25;
@@ -88,10 +88,10 @@
   --border: var(--color-border);
   --border-light: var(--color-border-subtle);
 
-  /* Shadows with depth levels */
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.06);
-  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.08);
+  /* Shadows (Brutalist - None) */
+  --shadow: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
 
   /* Brand colors */
   --primary: var(--color-primary);
@@ -110,15 +110,15 @@
   --warning: var(--color-warning);
   --warning-light: var(--color-warning-light);
 
-  /* Layout */
-  --radius: 8px;
-  --radius-sm: 6px;
-  --radius-lg: 12px;
+  /* Layout (Brutalist - Sharp Edges) */
+  --radius: 0;
+  --radius-sm: 0;
+  --radius-lg: 0;
 
-  /* Transitions */
-  --transition-fast: 120ms ease;
-  --transition-base: 150ms ease;
-  --transition-slow: 200ms ease;
+  /* Transitions (Brutalist - Instant) */
+  --transition-fast: 0ms;
+  --transition-base: 0ms;
+  --transition-slow: 0ms;
 
   /* Z-Index layers */
   --z-drawer: 100;
@@ -162,10 +162,10 @@ html[data-theme='dark'] {
   --glass-border: var(--color-border);
   --surface-hover: var(--color-surface-hover);
 
-  /* Shadow adjustments for dark mode */
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.16);
-  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.20);
+  /* Shadow adjustments for dark mode (Brutalist - None) */
+  --shadow: none;
+  --shadow-lg: none;
+  --shadow-xl: none;
 }
 
 * {
@@ -569,7 +569,6 @@ html[data-theme='dark'] .pill {
 
 .btn[data-variant='primary']:hover:not(:disabled) {
   background: var(--primary-hover);
-  box-shadow: none;
 }
 
 .btn[data-variant='danger'] {
@@ -1031,14 +1030,6 @@ html[data-theme='dark'] .sidebarToggle:hover {
   height: 8px;
   border-radius: 999px;
   background: var(--success);
-  box-shadow: 0 0 0 rgba(34, 197, 94, 0.4);
-  animation: livePulse 2s infinite;
-}
-
-@keyframes livePulse {
-  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.35); }
-  70% { box-shadow: 0 0 0 7px rgba(34, 197, 94, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1103,7 +1094,6 @@ html[data-theme='dark'] .sidebarToggle:hover {
   background: var(--panel-solid);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow-lg);
 }
 
 .dialogHeader {
@@ -1134,7 +1124,6 @@ html[data-theme='dark'] .sidebarToggle:hover {
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--panel-solid);
-  box-shadow: var(--shadow-lg);
 }
 
 .toastTitle {
@@ -1210,16 +1199,9 @@ html[data-theme='dark'] .sidebarToggle:hover {
   transition: width linear 50ms;
 }
 
-/* Skeleton loading */
-@keyframes skeleton-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
 .skeleton {
   background: linear-gradient(90deg, var(--color-border-subtle) 25%, var(--color-border) 50%, var(--color-border-subtle) 75%);
   background-size: 200% 100%;
-  animation: skeleton-loading 2s ease-in-out infinite;
   border-radius: var(--radius-sm);
 }
 
@@ -1412,18 +1394,6 @@ html[data-theme='dark'] .sidebarToggle:hover {
   background: color-mix(in srgb, var(--primary) 8%, transparent);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid color-mix(in srgb, var(--primary) 20%, var(--border));
-  animation: slideDown 0.2s ease;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .bulkActionsInfo {
@@ -1465,10 +1435,7 @@ html[data-theme='dark'] .sidebarToggle:hover {
   margin-top: 4px;
 }
 
-/* Button active state */
-.btn:active:not(:disabled) {
-  transform: scale(0.98);
-}
+/* Button active state - removed transform */
 
 /* Phase 3: Custom Checkbox Styling */
 .table input[type="checkbox"] {
@@ -1502,16 +1469,6 @@ html {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-/* Spin animation for loading */
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.spin {
-  animation: spin 1s linear infinite;
 }
 
 /* Search input with icon */
@@ -1613,7 +1570,6 @@ html {
     border-radius: var(--radius);
     margin-bottom: 12px;
     padding: 12px;
-    box-shadow: none;
   }
   
   .table tbody td {
@@ -1699,7 +1655,7 @@ html {
 }
 
 .iconBtn:active:not(:disabled) {
-  transform: scale(0.95);
+  /* Removed transform effect */
 }
 
 .iconBtn:disabled {
@@ -1746,7 +1702,6 @@ html {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(2px);
   z-index: var(--z-drawer);
   opacity: 0;
   transition: opacity 0.2s;
@@ -1766,7 +1721,6 @@ html {
   width: min(480px, 90vw);
   background: var(--panel-solid);
   border-left: 1px solid var(--border);
-  box-shadow: var(--shadow-lg);
   z-index: var(--z-drawer);
   transform: translateX(100%);
   transition: transform 0.2s ease;
@@ -1798,7 +1752,6 @@ html {
   background: var(--panel-solid);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-lg);
   z-index: var(--z-dropdown);
   max-height: min(280px, calc(100vh - 16px));
   overflow: auto;
@@ -1829,7 +1782,6 @@ html {
   background: var(--panel-solid);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-lg);
   z-index: var(--z-dropdown);
   min-width: 160px;
 }
