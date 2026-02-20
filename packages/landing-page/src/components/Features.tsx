@@ -1,7 +1,7 @@
-import React from 'react';
+import type { ReactNode } from 'react';
 
 interface FeatureCardProps {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   description: string;
   highlights: string[];
@@ -24,11 +24,13 @@ function FeatureCard({ icon, title, description, highlights }: FeatureCardProps)
 
 export function Features() {
   return (
-    <section className="features" id="features">
+    <section className="features" id="features" aria-labelledby="features-title">
       <div className="landing-shell features__container">
         <header className="features__header">
           <p className="features__eyebrow">PLATFORM CAPABILITIES</p>
-          <h2 className="features__title">Everything needed to operate a search bridge at scale</h2>
+          <h2 className="features__title" id="features-title">
+            Everything needed to operate a search bridge at scale
+          </h2>
           <p className="features__subtitle">
             From routing reliability to observability, MCP Nexus provides the core blocks to
             keep provider-backed search available and measurable.
@@ -47,7 +49,7 @@ export function Features() {
             highlights={[
               'Unified endpoint and response handling',
               'Provider fallback and continuity behavior',
-              'Low-friction integration for MCP clients',
+              'Low-friction integration for MCP clients'
             ]}
           />
 
@@ -62,7 +64,7 @@ export function Features() {
             highlights={[
               'Credit-aware selection controls',
               'Cooldown and health-state enforcement',
-              'Operational safeguards for burst traffic',
+              'Operational safeguards for burst traffic'
             ]}
           />
 
@@ -77,7 +79,7 @@ export function Features() {
             highlights={[
               'Live usage and route diagnostics',
               'Rapid troubleshooting for degraded providers',
-              'Operational data built for maintenance workflows',
+              'Operational data built for maintenance workflows'
             ]}
           />
 
@@ -92,7 +94,7 @@ export function Features() {
             highlights={[
               'Health status endpoint for automation',
               'Clear integration pathways (stdio + HTTP)',
-              'Consistent controls for operational teams',
+              'Consistent controls for operational teams'
             ]}
           />
         </div>

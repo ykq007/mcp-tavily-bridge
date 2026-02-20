@@ -1,22 +1,22 @@
 const stats = [
   { value: '2+', label: 'Search providers unified' },
   { value: '24/7', label: 'Health-aware key routing' },
-  { value: '1 UI', label: 'Admin control center' },
+  { value: '1 UI', label: 'Admin control center' }
 ];
 
 const highlights = [
   'Smart key rotation with cooldown and recovery logic',
   'Client token controls to isolate and manage usage',
-  'Operational visibility across requests, credits, and errors',
+  'Operational visibility across requests, credits, and errors'
 ];
 
 export function Hero() {
   return (
-    <section className="hero">
+    <section className="hero" aria-labelledby="landing-hero-title">
       <div className="landing-shell hero__container">
         <div className="hero__content">
           <p className="hero__eyebrow">SEARCH INFRASTRUCTURE, REFINED</p>
-          <h1 className="hero__title">
+          <h1 className="hero__title" id="landing-hero-title">
             Run Tavily + Brave through one resilient bridge.
           </h1>
           <p className="hero__subtitle">
@@ -28,7 +28,13 @@ export function Hero() {
             <a href="/admin" className="btn btn--primary">
               Get Started
             </a>
-            <a href="https://github.com/anthropics/mcp-nexus" className="btn btn--secondary" target="_blank" rel="noreferrer">
+            <a
+              href="https://github.com/anthropics/mcp-nexus"
+              className="btn btn--secondary"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="View on GitHub (opens in a new tab)"
+            >
               View on GitHub
             </a>
           </div>
