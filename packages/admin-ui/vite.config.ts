@@ -1,7 +1,6 @@
-import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig({
+export default {
   base: '/admin/',
   plugins: [react()],
   build: {
@@ -23,4 +22,4 @@ export default defineConfig({
       }
     }
   }
-});
+};

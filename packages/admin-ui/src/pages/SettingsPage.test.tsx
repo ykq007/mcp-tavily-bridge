@@ -9,7 +9,7 @@ function renderSettingsPage(opts: { signedIn: boolean }): string {
     <ToastProvider>
       <SettingsPage
         api={{} as any}
-        value={{ apiBaseUrl: '', theme: 'light' }}
+        value={{ apiBaseUrl: '', theme: 'light', locale: 'en' }}
         signedIn={opts.signedIn}
         onChange={vi.fn()}
         onGoToLogin={vi.fn()}
@@ -34,4 +34,3 @@ describe('SettingsPage auth actions', () => {
     expect(html).toContain('Sign out');
   });
 });
-
