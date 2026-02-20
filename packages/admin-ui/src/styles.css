@@ -1,9 +1,9 @@
 :root {
   /* ========================================
-     Design Tokens (2026 Design System)
+     Design Tokens (Unified Design System)
      ======================================== */
 
-  /* Spacing Scale (8px Grid - Brutalist) */
+  /* Spacing Scale (8px Grid) */
   --space-0: 0;
   --space-1: 8px;
   --space-2: 16px;
@@ -14,25 +14,25 @@
   --space-10: 80px;
   --space-12: 96px;
 
-  /* Typography (Brutalist - Arial/Helvetica) */
-  --font-sans: Arial, 'Helvetica Neue', Helvetica, sans-serif;
-  --font-mono: 'Courier New', Courier, monospace;
+  /* Typography */
+  --font-sans: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 
   /* Font Size */
   --text-xs: 12px;
   --text-sm: 13px;
   --text-base: 14px;
-  --text-lg: 16px;
-  --text-xl: 20px;
-  --text-2xl: 24px;
-  --text-3xl: 28px;
+  --text-lg: 17px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+  --text-3xl: 36px;
 
-  /* Font Weight (Brutalist - Bold) */
+  /* Font Weight */
   --font-normal: 400;
-  --font-medium: 600;
-  --font-semibold: 700;
+  --font-medium: 500;
+  --font-semibold: 600;
   --font-bold: 700;
-  --font-extrabold: 900;
+  --font-extrabold: 800;
 
   /* Line Height */
   --lh-tight: 1.25;
@@ -40,32 +40,32 @@
   --lh-loose: 1.75;
 
   /* Semantic Colors (Light Mode) */
-  --color-bg: #fafafa;
+  --color-bg: #f3f7ff;
   --color-surface-1: #ffffff;
-  --color-surface-2: #f5f5f5;
-  --color-surface-hover: rgba(0, 0, 0, 0.03);
+  --color-surface-2: #f6f9ff;
+  --color-surface-hover: rgba(43, 85, 227, 0.06);
 
-  --color-text: #171717;
-  --color-text-muted: #737373;
-  --color-text-inverse: #fafafa;
+  --color-text: #0f172a;
+  --color-text-muted: #5b667d;
+  --color-text-inverse: #f8fbff;
 
-  --color-border: rgba(0, 0, 0, 0.08);
-  --color-border-subtle: rgba(0, 0, 0, 0.04);
+  --color-border: rgba(37, 62, 120, 0.14);
+  --color-border-subtle: rgba(37, 62, 120, 0.08);
 
-  --color-primary: #0369a1;
-  --color-primary-hover: #0284c7;
-  --color-primary-light: rgba(3, 105, 161, 0.12);
-  --color-primary-dark: #0c4a6e;
+  --color-primary: #2458d7;
+  --color-primary-hover: #1f4bc0;
+  --color-primary-light: rgba(36, 88, 215, 0.14);
+  --color-primary-dark: #1b3f95;
 
-  --color-cta: #22c55e;
-  --color-cta-hover: #16a34a;
+  --color-cta: #0ea5a4;
+  --color-cta-hover: #0b8e8d;
 
-  --color-success: #22c55e;
-  --color-success-light: rgba(34, 197, 94, 0.14);
-  --color-warning: #f59e0b;
-  --color-warning-light: rgba(245, 158, 11, 0.16);
-  --color-danger: #ef4444;
-  --color-danger-light: rgba(239, 68, 68, 0.14);
+  --color-success: #16a34a;
+  --color-success-light: rgba(22, 163, 74, 0.14);
+  --color-warning: #d97706;
+  --color-warning-light: rgba(217, 119, 6, 0.16);
+  --color-danger: #dc2626;
+  --color-danger-light: rgba(220, 38, 38, 0.14);
 
   /* Z-Index Layers */
   --z-base: 0;
@@ -73,7 +73,10 @@
   --z-dropdown: 50;
   --z-drawer: 100;
   --z-modal: 120;
-  --z-toast: 140;
+  --z-toast: 110;
+
+  /* Component constants */
+  --nav-height: 64px;
 
   /* ========================================
      Legacy Compatibility Aliases
@@ -88,10 +91,10 @@
   --border: var(--color-border);
   --border-light: var(--color-border-subtle);
 
-  /* Shadows (Brutalist - None) */
-  --shadow: none;
-  --shadow-lg: none;
-  --shadow-xl: none;
+  /* Shadows */
+  --shadow: 0 3px 16px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 16px 42px rgba(15, 23, 42, 0.13);
+  --shadow-xl: 0 24px 60px rgba(15, 23, 42, 0.22);
 
   /* Brand colors */
   --primary: var(--color-primary);
@@ -110,20 +113,15 @@
   --warning: var(--color-warning);
   --warning-light: var(--color-warning-light);
 
-  /* Layout (Brutalist - Sharp Edges) */
-  --radius: 0;
-  --radius-sm: 0;
-  --radius-lg: 0;
+  /* Layout */
+  --radius: 16px;
+  --radius-sm: 12px;
+  --radius-lg: 22px;
 
-  /* Transitions (Brutalist - Instant) */
-  --transition-fast: 0ms;
-  --transition-base: 0ms;
-  --transition-slow: 0ms;
-
-  /* Z-Index layers */
-  --z-drawer: 100;
-  --z-toast: 110;
-  --z-modal: 120;
+  /* Transitions */
+  --transition-fast: 120ms ease;
+  --transition-base: 220ms ease;
+  --transition-slow: 320ms ease;
 
   /* 2026 Dashboard Enhancements */
   --glass-border: var(--border);
@@ -134,22 +132,32 @@
 
 html[data-theme='dark'] {
   /* Semantic Colors (Dark Mode) */
-  --color-bg: #0a0a0a;
-  --color-surface-1: #141414;
-  --color-surface-2: #1a1a1a;
-  --color-surface-hover: rgba(255, 255, 255, 0.04);
+  --color-bg: #060d19;
+  --color-surface-1: #0f1827;
+  --color-surface-2: #162236;
+  --color-surface-hover: rgba(110, 168, 255, 0.11);
 
-  --color-text: #ededed;
-  --color-text-muted: #a3a3a3;
-  --color-text-inverse: #0a0a0a;
+  --color-text: #e2ecff;
+  --color-text-muted: #98a8c4;
+  --color-text-inverse: #060d19;
 
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-subtle: rgba(255, 255, 255, 0.04);
+  --color-border: rgba(143, 174, 236, 0.22);
+  --color-border-subtle: rgba(143, 174, 236, 0.12);
 
-  --color-primary-light: rgba(14, 165, 233, 0.18);
-  --color-success-light: rgba(34, 197, 94, 0.16);
-  --color-warning-light: rgba(245, 158, 11, 0.18);
-  --color-danger-light: rgba(239, 68, 68, 0.16);
+  --color-primary: #6ea8ff;
+  --color-primary-hover: #8abaff;
+  --color-primary-light: rgba(110, 168, 255, 0.2);
+  --color-primary-dark: #4a84e7;
+
+  --color-cta: #2dd4bf;
+  --color-cta-hover: #38e2cc;
+
+  --color-success: #4ade80;
+  --color-success-light: rgba(74, 222, 128, 0.16);
+  --color-warning: #fbbf24;
+  --color-warning-light: rgba(251, 191, 36, 0.2);
+  --color-danger: #f87171;
+  --color-danger-light: rgba(248, 113, 113, 0.18);
 
   /* Legacy Compatibility Aliases */
   --bg: var(--color-bg);
@@ -162,10 +170,10 @@ html[data-theme='dark'] {
   --glass-border: var(--color-border);
   --surface-hover: var(--color-surface-hover);
 
-  /* Shadow adjustments for dark mode (Brutalist - None) */
-  --shadow: none;
-  --shadow-lg: none;
-  --shadow-xl: none;
+  /* Shadow adjustments for dark mode */
+  --shadow: 0 3px 18px rgba(0, 0, 0, 0.32);
+  --shadow-lg: 0 16px 42px rgba(0, 0, 0, 0.46);
+  --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.62);
 }
 
 * {
@@ -218,6 +226,26 @@ code {
 
 #root {
   min-height: 100%;
+}
+
+.skipLink {
+  position: fixed;
+  left: var(--space-2);
+  top: var(--space-2);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--panel-solid);
+  color: var(--text);
+  font-weight: var(--font-semibold);
+  text-decoration: none;
+  z-index: var(--z-toast);
+  transform: translateY(-200%);
+  transition: transform var(--transition-fast);
+}
+
+.skipLink:focus {
+  transform: translateY(0);
 }
 
 .appFrame,
@@ -1082,11 +1110,11 @@ html[data-theme='dark'] .sidebarToggle:hover {
 .dialogOverlay {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: var(--z-modal);
   background: rgba(0, 0, 0, 0.4);
   display: grid;
   place-items: center;
-  padding: 16px;
+  padding: var(--space-2);
 }
 
 .dialog {
@@ -1115,7 +1143,7 @@ html[data-theme='dark'] .sidebarToggle:hover {
   bottom: 14px;
   display: grid;
   gap: 10px;
-  z-index: 50;
+  z-index: var(--z-toast);
 }
 
 .toast {
@@ -1124,6 +1152,33 @@ html[data-theme='dark'] .sidebarToggle:hover {
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--panel-solid);
+  position: relative;
+  transform: translateX(0);
+  opacity: 1;
+  transition: transform 200ms ease-out, opacity 200ms ease-out;
+}
+
+.toast--exiting {
+  transform: translateX(120%);
+  opacity: 0;
+}
+
+.toastDismiss {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  margin-top: -2px;
+  margin-right: -4px;
+  border-radius: 6px;
+  display: flex;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.toastDismiss:hover {
+  color: var(--text);
+  background: var(--surface-hover);
 }
 
 .toastTitle {
@@ -1469,6 +1524,15 @@ html {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+
+  .btn:hover:not(:disabled) {
+    transform: none !important;
+  }
+
+  .toast--exiting {
+    transform: none !important;
+    opacity: 1 !important;
+  }
 }
 
 /* Search input with icon */
@@ -1478,10 +1542,6 @@ html {
 }
 
 /* Mobile Navigation */
-:root {
-  --nav-height: 64px;
-}
-
 .mobileNav {
   display: none;
   position: fixed;
@@ -1493,7 +1553,7 @@ html {
   border-top: 1px solid var(--color-border-subtle);
   justify-content: space-around;
   align-items: center;
-  z-index: 100;
+  z-index: var(--z-sticky);
   padding-bottom: env(safe-area-inset-bottom);
 }
 
@@ -1805,6 +1865,10 @@ html {
   background: var(--surface-hover);
 }
 
+.actionMenuItem[data-focused='true'] {
+  background: var(--surface-hover);
+}
+
 .actionMenuItem svg {
   width: 16px;
   height: 16px;
@@ -2041,91 +2105,8 @@ html {
 .json-null { color: var(--muted); }
 
 /* ==========================================================
-   2026 UI Refresh (layered overrides)
+   2026 UI Refresh (component/layout overrides)
    ========================================================== */
-
-:root {
-  --font-sans: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SFMono-Regular', ui-monospace, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-
-  --text-lg: 17px;
-  --text-xl: 22px;
-  --text-2xl: 28px;
-  --text-3xl: 36px;
-
-  --font-medium: 500;
-  --font-semibold: 600;
-  --font-bold: 700;
-  --font-extrabold: 800;
-
-  --color-bg: #f3f7ff;
-  --color-surface-1: #ffffff;
-  --color-surface-2: #f6f9ff;
-  --color-surface-hover: rgba(43, 85, 227, 0.06);
-
-  --color-text: #0f172a;
-  --color-text-muted: #5b667d;
-  --color-text-inverse: #f8fbff;
-
-  --color-border: rgba(37, 62, 120, 0.14);
-  --color-border-subtle: rgba(37, 62, 120, 0.08);
-
-  --color-primary: #2458d7;
-  --color-primary-hover: #1f4bc0;
-  --color-primary-light: rgba(36, 88, 215, 0.14);
-  --color-primary-dark: #1b3f95;
-
-  --color-cta: #0ea5a4;
-  --color-cta-hover: #0b8e8d;
-
-  --color-success: #16a34a;
-  --color-success-light: rgba(22, 163, 74, 0.14);
-  --color-warning: #d97706;
-  --color-warning-light: rgba(217, 119, 6, 0.16);
-  --color-danger: #dc2626;
-  --color-danger-light: rgba(220, 38, 38, 0.14);
-
-  --radius: 16px;
-  --radius-sm: 12px;
-  --radius-lg: 22px;
-
-  --shadow: 0 3px 16px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 16px 42px rgba(15, 23, 42, 0.13);
-  --shadow-xl: 0 24px 60px rgba(15, 23, 42, 0.22);
-
-  --transition-fast: 120ms ease;
-  --transition-base: 220ms ease;
-  --transition-slow: 320ms ease;
-}
-
-html[data-theme='dark'] {
-  --color-bg: #060d19;
-  --color-surface-1: #0f1827;
-  --color-surface-2: #162236;
-  --color-surface-hover: rgba(110, 168, 255, 0.11);
-
-  --color-text: #e2ecff;
-  --color-text-muted: #98a8c4;
-  --color-text-inverse: #060d19;
-
-  --color-border: rgba(143, 174, 236, 0.22);
-  --color-border-subtle: rgba(143, 174, 236, 0.12);
-
-  --color-primary: #6ea8ff;
-  --color-primary-hover: #8abaff;
-  --color-primary-light: rgba(110, 168, 255, 0.2);
-  --color-primary-dark: #4a84e7;
-
-  --color-cta: #2dd4bf;
-  --color-cta-hover: #38e2cc;
-
-  --color-success: #4ade80;
-  --color-success-light: rgba(74, 222, 128, 0.16);
-  --color-warning: #fbbf24;
-  --color-warning-light: rgba(251, 191, 36, 0.2);
-  --color-danger: #f87171;
-  --color-danger-light: rgba(248, 113, 113, 0.18);
-}
 
 body {
   background:
@@ -2166,7 +2147,7 @@ body {
 }
 
 .appHeader {
-  padding: 18px 24px;
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--border-light);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--panel-solid) 95%, transparent) 0%, color-mix(in srgb, var(--panel) 90%, transparent) 100%);
@@ -2196,7 +2177,7 @@ body {
 }
 
 .mainBody {
-  padding: 24px;
+  padding: var(--space-3);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--panel) 54%, transparent) 0%, color-mix(in srgb, var(--panel-solid) 92%, transparent) 100%);
 }
@@ -2260,7 +2241,7 @@ body {
 .btn {
   min-height: 36px;
   padding: 8px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border-color: var(--border-light);
   background: color-mix(in srgb, var(--panel-solid) 95%, transparent);
   box-shadow: 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent);
@@ -2293,7 +2274,7 @@ body {
 .input,
 .select,
 .textarea {
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border-color: var(--border-light);
   background: color-mix(in srgb, var(--panel-solid) 98%, transparent);
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent);
@@ -2334,8 +2315,8 @@ body {
 
 .navHeader,
 .nav {
-  padding-left: 16px;
-  padding-right: 16px;
+  padding-left: var(--space-2);
+  padding-right: var(--space-2);
 }
 
 .nav {
@@ -2350,7 +2331,7 @@ body {
 
 .navItem {
   border: 1px solid transparent;
-  border-radius: 11px;
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
   gap: 12px;
 }
@@ -2376,7 +2357,7 @@ body {
 }
 
 .navFooter {
-  padding: 16px;
+  padding: var(--space-2);
   border-top: 1px solid var(--border-light);
   background: color-mix(in srgb, var(--panel) 75%, transparent);
 }
@@ -2384,7 +2365,7 @@ body {
 .themeToggle,
 .sidebarToggle {
   border: 1px solid transparent;
-  border-radius: 11px;
+  border-radius: var(--radius-sm);
   padding: 9px 10px;
 }
 
@@ -2396,7 +2377,7 @@ body {
 .navConnectionInfo {
   margin-top: 14px;
   padding: 10px;
-  border-radius: 11px;
+  border-radius: var(--radius-sm);
   border: 1px dashed var(--border-light);
   background: color-mix(in srgb, var(--panel-solid) 88%, transparent);
 }

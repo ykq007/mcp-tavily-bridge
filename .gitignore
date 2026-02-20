@@ -15,6 +15,7 @@ packages/bridge-worker/
 *.tsbuildinfo
 
 # Local AI/agent tooling
+.omx/
 .codex/
 .gemini/
 .claude/

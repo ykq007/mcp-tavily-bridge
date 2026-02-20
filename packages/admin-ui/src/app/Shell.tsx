@@ -61,6 +61,9 @@ export function ShellLayout({
 
   return (
     <div className={`appFrame${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
+      <a className="skipLink" href="#mainContent">
+        {t('a11y.skipToContent')}
+      </a>
       <div className="appShell">
         {/* Desktop Sidebar */}
         <aside className="sidebar">
@@ -109,7 +112,7 @@ export function ShellLayout({
           </div>
         </aside>
 
-        <main className="mainPanel">
+        <main className="mainPanel" id="mainContent" tabIndex={-1}>
           <header className="appHeader">
             <div className="topbarTitle">
               <div className="h1">{title}</div>

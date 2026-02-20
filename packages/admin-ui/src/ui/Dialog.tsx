@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useRef } from 'react';
 import { IconX } from './icons';
+import { IconButton } from './IconButton';
 
 export function Dialog({
   title,
@@ -124,9 +125,7 @@ export function Dialog({
             </div>
             {description === '' ? null : <div className="help">{description ?? 'Press Esc to close'}</div>}
           </div>
-          <button className="btn" data-variant="ghost" onClick={onClose} aria-label="Close dialog">
-            <IconX />
-          </button>
+          <IconButton icon={<IconX />} onClick={onClose} aria-label="Close dialog" />
         </div>
         <div className="dialogBody">{children}</div>
       </div>

@@ -89,15 +89,9 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
 
   return (
     <div
-      className="toast"
+      className={`toast${isExiting ? ' toast--exiting' : ''}`}
       data-variant={variant}
       role="status"
-      style={{
-        position: 'relative',
-        transform: isExiting ? 'translateX(120%)' : 'translateX(0)',
-        opacity: isExiting ? 0 : 1,
-        transition: 'all 200ms ease-out',
-      }}
     >
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
         <div className="toastIcon" data-variant={variant}>
@@ -109,18 +103,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
         </div>
         <button
           onClick={handleDismiss}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--muted)',
-            cursor: 'pointer',
-            padding: 4,
-            marginTop: -2,
-            marginRight: -4,
-            borderRadius: 4,
-            display: 'flex',
-            transition: 'color 150ms ease',
-          }}
+          className="toastDismiss"
           aria-label="Dismiss notification"
         >
           <IconX />

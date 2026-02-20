@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IconDownload, IconUpload, IconClipboard } from './icons';
 import { Portal } from './Portal';
@@ -17,43 +17,94 @@ export function ImportExportActions({
   loading?: boolean;
 }) {
   const { t } = useTranslation('keys');
-  const [importMenuOpen, setImportMenuOpen] = useState(false);
-  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const importMenuId = useId();
+  const exportMenuId = useId();
+
+  const [openMenu, setOpenMenu] = useState<null | 'import' | 'export'>(null);
+  const [focusedIndex, setFocusedIndex] = useState(0);
   const importRootRef = useRef<HTMLDivElement>(null);
   const exportRootRef = useRef<HTMLDivElement>(null);
   const importTriggerRef = useRef<HTMLButtonElement>(null);
   const exportTriggerRef = useRef<HTMLButtonElement>(null);
   const importMenuRef = useRef<HTMLDivElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const importItemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const exportItemRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const [importMenuPos, setImportMenuPos] = useState<{ top: number; left: number } | null>(null);
   const [exportMenuPos, setExportMenuPos] = useState<{ top: number; left: number } | null>(null);
 
-  const updateImportPosition = useCallback(() => {
-    const trigger = importTriggerRef.current;
-    if (!trigger) return;
+  const importItems = useMemo(
+    () => [
+      { key: 'file', icon: <IconUpload />, label: t('import.fromFile'), onSelect: onImportFromFile },
+      { key: 'clipboard', icon: <IconClipboard />, label: t('import.fromClipboard'), onSelect: onImportFromClipboard }
+    ],
+    [onImportFromClipboard, onImportFromFile, t]
+  );
 
-    const rect = trigger.getBoundingClientRect();
-    const top = rect.bottom + 4;
-    const left = rect.left;
+  const exportItems = useMemo(
+    () => [
+      { key: 'file', icon: <IconDownload />, label: t('export.toFile'), onSelect: onExportToFile },
+      { key: 'clipboard', icon: <IconClipboard />, label: t('export.toClipboard'), onSelect: onExportToClipboard }
+    ],
+    [onExportToClipboard, onExportToFile, t]
+  );
 
-    setImportMenuPos({ top, left });
-  }, []);
+  const clampMenuPosition = useCallback(
+    (opts: { trigger: HTMLButtonElement; menu: HTMLDivElement }) => {
+      const rect = opts.trigger.getBoundingClientRect();
+      const menuWidth = opts.menu.offsetWidth || 180;
+      const menuHeight = opts.menu.offsetHeight || 160;
+      const margin = 8;
 
-  const updateExportPosition = useCallback(() => {
-    const trigger = exportTriggerRef.current;
-    if (!trigger) return;
+      let left = rect.left;
+      if (left + menuWidth > window.innerWidth - margin) {
+        left = window.innerWidth - margin - menuWidth;
+      }
+      left = Math.max(margin, left);
 
-    const rect = trigger.getBoundingClientRect();
-    const top = rect.bottom + 4;
-    const left = rect.left;
+      const belowTop = rect.bottom + 4;
+      const aboveTop = rect.top - 4 - menuHeight;
+      const top =
+        belowTop + menuHeight <= window.innerHeight - margin
+          ? belowTop
+          : aboveTop >= margin
+            ? aboveTop
+            : Math.max(margin, Math.min(belowTop, window.innerHeight - margin - menuHeight));
 
-    setExportMenuPos({ top, left });
-  }, []);
+      return { top, left };
+    },
+    []
+  );
+
+  const updatePosition = useCallback(() => {
+    if (openMenu === 'import') {
+      const trigger = importTriggerRef.current;
+      const menu = importMenuRef.current;
+      if (!trigger || !menu) return;
+      setImportMenuPos(clampMenuPosition({ trigger, menu }));
+      return;
+    }
+    if (openMenu === 'export') {
+      const trigger = exportTriggerRef.current;
+      const menu = exportMenuRef.current;
+      if (!trigger || !menu) return;
+      setExportMenuPos(clampMenuPosition({ trigger, menu }));
+    }
+  }, [clampMenuPosition, openMenu]);
+
+  const closeMenu = useCallback(
+    (menu: 'import' | 'export') => {
+      setOpenMenu(null);
+      if (menu === 'import') importTriggerRef.current?.focus();
+      if (menu === 'export') exportTriggerRef.current?.focus();
+    },
+    []
+  );
 
   // Click outside to close
   useEffect(() => {
-    if (!importMenuOpen && !exportMenuOpen) return;
+    if (!openMenu) return;
 
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node | null;
@@ -62,50 +113,90 @@ export function ImportExportActions({
       if (importRootRef.current?.contains(target) || importMenuRef.current?.contains(target)) return;
       if (exportRootRef.current?.contains(target) || exportMenuRef.current?.contains(target)) return;
 
-      setImportMenuOpen(false);
-      setExportMenuOpen(false);
+      closeMenu(openMenu);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [importMenuOpen, exportMenuOpen]);
+  }, [closeMenu, openMenu]);
 
-  // Keyboard navigation for Import menu
   useEffect(() => {
-    if (!importMenuOpen) return;
+    if (!openMenu) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setImportMenuOpen(false);
-        importTriggerRef.current?.focus();
+      const items = openMenu === 'import' ? importItems : exportItems;
+
+      switch (e.key) {
+        case 'Escape':
+          e.preventDefault();
+          closeMenu(openMenu);
+          return;
+        case 'Tab':
+          e.preventDefault();
+          closeMenu(openMenu);
+          return;
+        case 'ArrowDown':
+          e.preventDefault();
+          setFocusedIndex((prev) => (prev + 1) % items.length);
+          return;
+        case 'ArrowUp':
+          e.preventDefault();
+          setFocusedIndex((prev) => (prev - 1 + items.length) % items.length);
+          return;
+        case 'Home':
+          e.preventDefault();
+          setFocusedIndex(0);
+          return;
+        case 'End':
+          e.preventDefault();
+          setFocusedIndex(items.length - 1);
+          return;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          items[focusedIndex]?.onSelect();
+          closeMenu(openMenu);
+          return;
       }
     };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [importMenuOpen]);
 
-  // Keyboard navigation for Export menu
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [closeMenu, exportItems, focusedIndex, importItems, openMenu]);
+
   useEffect(() => {
-    if (!exportMenuOpen) return;
+    if (!openMenu) return;
+    const refs = openMenu === 'import' ? importItemRefs : exportItemRefs;
+    refs.current[focusedIndex]?.focus();
+  }, [focusedIndex, openMenu]);
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setExportMenuOpen(false);
-        exportTriggerRef.current?.focus();
-      }
+  useEffect(() => {
+    if (!openMenu) return;
+
+    // Reset focus index when opening.
+    setFocusedIndex(0);
+  }, [openMenu]);
+
+  useEffect(() => {
+    if (!openMenu) return;
+
+    // Measure + position and focus first item.
+    requestAnimationFrame(() => {
+      updatePosition();
+      const refs = openMenu === 'import' ? importItemRefs : exportItemRefs;
+      refs.current[0]?.focus();
+    });
+  }, [openMenu, updatePosition]);
+
+  useEffect(() => {
+    if (!openMenu) return;
+    const onWindowChange = () => updatePosition();
+    window.addEventListener('resize', onWindowChange);
+    window.addEventListener('scroll', onWindowChange, true);
+    return () => {
+      window.removeEventListener('resize', onWindowChange);
+      window.removeEventListener('scroll', onWindowChange, true);
     };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [exportMenuOpen]);
-
-  useEffect(() => {
-    if (importMenuOpen) updateImportPosition();
-  }, [importMenuOpen, updateImportPosition]);
-
-  useEffect(() => {
-    if (exportMenuOpen) updateExportPosition();
-  }, [exportMenuOpen, updateExportPosition]);
+  }, [openMenu, updatePosition]);
 
   return (
     <>
@@ -114,51 +205,58 @@ export function ImportExportActions({
         <button
           ref={importTriggerRef}
           className="btn"
-          onClick={() => setImportMenuOpen(!importMenuOpen)}
+          onClick={() => setOpenMenu((prev) => (prev === 'import' ? null : 'import'))}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setOpenMenu('import');
+            }
+          }}
           disabled={loading}
           aria-haspopup="menu"
-          aria-expanded={importMenuOpen}
+          aria-expanded={openMenu === 'import'}
+          aria-controls={importMenuId}
         >
           <IconUpload />
           {t('import.button', 'Import')}
         </button>
 
-        {importMenuOpen && (
+        {openMenu === 'import' && (
           <Portal>
             <div
               ref={importMenuRef}
               className="actionMenu"
               role="menu"
+              id={importMenuId}
+              aria-label={t('import.button', 'Import')}
               style={{
                 position: 'fixed',
                 top: importMenuPos?.top ?? 0,
                 left: importMenuPos?.left ?? 0
               }}
             >
-              <button
-                type="button"
-                className="actionMenuItem"
-                role="menuitem"
-                onClick={() => {
-                  onImportFromFile();
-                  setImportMenuOpen(false);
-                }}
-              >
-                <IconUpload />
-                <span>{t('import.fromFile')}</span>
-              </button>
-              <button
-                type="button"
-                className="actionMenuItem"
-                role="menuitem"
-                onClick={() => {
-                  onImportFromClipboard();
-                  setImportMenuOpen(false);
-                }}
-              >
-                <IconClipboard />
-                <span>{t('import.fromClipboard')}</span>
-              </button>
+              {importItems.map((item, idx) => (
+                <button
+                  key={item.key}
+                  ref={(el) => {
+                    importItemRefs.current[idx] = el;
+                  }}
+                  type="button"
+                  className="actionMenuItem"
+                  role="menuitem"
+                  tabIndex={focusedIndex === idx ? 0 : -1}
+                  data-focused={focusedIndex === idx}
+                  onMouseMove={() => setFocusedIndex(idx)}
+                  onFocus={() => setFocusedIndex(idx)}
+                  onClick={() => {
+                    item.onSelect();
+                    closeMenu('import');
+                  }}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </button>
+              ))}
             </div>
           </Portal>
         )}
@@ -169,51 +267,58 @@ export function ImportExportActions({
         <button
           ref={exportTriggerRef}
           className="btn"
-          onClick={() => setExportMenuOpen(!exportMenuOpen)}
+          onClick={() => setOpenMenu((prev) => (prev === 'export' ? null : 'export'))}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setOpenMenu('export');
+            }
+          }}
           disabled={loading}
           aria-haspopup="menu"
-          aria-expanded={exportMenuOpen}
+          aria-expanded={openMenu === 'export'}
+          aria-controls={exportMenuId}
         >
           <IconDownload />
           {t('export.button', 'Export')}
         </button>
 
-        {exportMenuOpen && (
+        {openMenu === 'export' && (
           <Portal>
             <div
               ref={exportMenuRef}
               className="actionMenu"
               role="menu"
+              id={exportMenuId}
+              aria-label={t('export.button', 'Export')}
               style={{
                 position: 'fixed',
                 top: exportMenuPos?.top ?? 0,
                 left: exportMenuPos?.left ?? 0
               }}
             >
-              <button
-                type="button"
-                className="actionMenuItem"
-                role="menuitem"
-                onClick={() => {
-                  onExportToFile();
-                  setExportMenuOpen(false);
-                }}
-              >
-                <IconDownload />
-                <span>{t('export.toFile')}</span>
-              </button>
-              <button
-                type="button"
-                className="actionMenuItem"
-                role="menuitem"
-                onClick={() => {
-                  onExportToClipboard();
-                  setExportMenuOpen(false);
-                }}
-              >
-                <IconClipboard />
-                <span>{t('export.toClipboard')}</span>
-              </button>
+              {exportItems.map((item, idx) => (
+                <button
+                  key={item.key}
+                  ref={(el) => {
+                    exportItemRefs.current[idx] = el;
+                  }}
+                  type="button"
+                  className="actionMenuItem"
+                  role="menuitem"
+                  tabIndex={focusedIndex === idx ? 0 : -1}
+                  data-focused={focusedIndex === idx}
+                  onMouseMove={() => setFocusedIndex(idx)}
+                  onFocus={() => setFocusedIndex(idx)}
+                  onClick={() => {
+                    item.onSelect();
+                    closeMenu('export');
+                  }}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </button>
+              ))}
             </div>
           </Portal>
         )}

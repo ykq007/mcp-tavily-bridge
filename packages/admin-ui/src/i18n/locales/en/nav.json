@@ -29,5 +29,8 @@
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar"
   },
+  "a11y": {
+    "skipToContent": "Skip to content"
+  },
   "connection": "Connection"
 }

@@ -7,7 +7,10 @@ interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
   loading?: boolean;
 }
 
-export function IconButton({ icon, variant = 'ghost', size = 'md', loading, className, ...props }: IconButtonProps) {
+export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
+  { icon, variant = 'ghost', size = 'md', loading, className, ...props },
+  ref
+) {
   const classes = [
     'iconBtn',
     size === 'sm' && 'iconBtn--sm',
@@ -27,6 +30,7 @@ export function IconButton({ icon, variant = 'ghost', size = 'md', loading, clas
 
   return (
     <button
+      ref={ref}
       className={classes}
       disabled={loading || props.disabled}
       aria-label={ariaLabel}
@@ -46,4 +50,4 @@ export function IconButton({ icon, variant = 'ghost', size = 'md', loading, clas
       ) : icon}
     </button>
   );
-}
+});

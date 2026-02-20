@@ -1,4 +1,6 @@
 import React, { useEffect, useId, useRef } from 'react';
+import { IconButton } from './IconButton';
+import { IconX } from './icons';
 
 interface DrawerProps {
   open: boolean;
@@ -126,12 +128,7 @@ export function Drawer({ open, onClose, title, children }: DrawerProps) {
       >
         <div className="drawerHeader">
           <div id={titleId} className="h2">{title}</div>
-          <button ref={closeButtonRef} className="iconBtn" onClick={onClose} aria-label="Close drawer" type="button">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 6 6 18" />
-              <path d="m6 6 12 12" />
-            </svg>
-          </button>
+          <IconButton ref={closeButtonRef} icon={<IconX />} onClick={onClose} aria-label="Close drawer" type="button" />
         </div>
         <div className="drawerBody">
           {children}

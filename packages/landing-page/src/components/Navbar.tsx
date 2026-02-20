@@ -1,3 +1,5 @@
+import { useEffect, useId, useRef, useState } from 'react';
+
 const navLinks = [
   { href: '#features', label: 'Features' },
   { href: '/health', label: 'Health' },
@@ -5,9 +7,71 @@ const navLinks = [
 ];
 
 export function Navbar() {
+  const mobileMenuId = useId();
+  const mobileMenuTitleId = useId();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const mobileMenuRef = useRef<HTMLDivElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    previousActiveElement.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setMobileMenuOpen(false);
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const menu = mobileMenuRef.current;
+      if (!menu) return;
+
+      const focusable = Array.from(
+        menu.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
+      ).filter((el) => !(el as any).disabled);
+
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+      if (!active || !menu.contains(active)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+        return;
+      }
+
+      if (event.shiftKey) {
+        if (active === first) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (active === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      (previousActiveElement.current ?? menuButtonRef.current)?.focus();
+    };
+  }, [mobileMenuOpen]);
+
   return (
-    <nav className="navbar" aria-label="Primary navigation">
-      <div className="landing-shell navbar__container">
+    <>
+      <nav className="navbar" aria-label="Primary navigation">
+        <div className="landing-shell navbar__container">
         <a href="/" className="navbar__brand">
           <span className="navbar__logo-wrap" aria-hidden="true">
             <svg className="navbar__logo" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -37,7 +101,72 @@ export function Navbar() {
             Open Dashboard
           </a>
         </div>
+
+        <button
+          ref={menuButtonRef}
+          type="button"
+          className="navbar__menuButton"
+          aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-expanded={mobileMenuOpen}
+          aria-controls={mobileMenuId}
+          onClick={() => setMobileMenuOpen((prev) => !prev)}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d={
+                mobileMenuOpen
+                  ? 'M18.3 5.7a1 1 0 0 1 0 1.4L13.4 12l4.9 4.9a1 1 0 1 1-1.4 1.4L12 13.4l-4.9 4.9a1 1 0 0 1-1.4-1.4l4.9-4.9-4.9-4.9a1 1 0 0 1 1.4-1.4l4.9 4.9 4.9-4.9a1 1 0 0 1 1.4 0Z'
+                  : 'M4 6.5A1 1 0 0 1 5 5.5h14a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Zm0 5.5a1 1 0 0 1 1-1h14a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Zm0 5.5a1 1 0 0 1 1-1h14a1 1 0 1 1 0 2H5a1 1 0 0 1-1-1Z'
+              }
+            />
+          </svg>
+        </button>
       </div>
     </nav>
+
+      {mobileMenuOpen ? (
+        <div className="navbar__mobileOverlay" role="presentation" onClick={() => setMobileMenuOpen(false)}>
+          <div
+            id={mobileMenuId}
+            className="navbar__mobileMenu"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={mobileMenuTitleId}
+            ref={mobileMenuRef}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="navbar__mobileHeader">
+              <div id={mobileMenuTitleId} className="navbar__mobileTitle">Menu</div>
+              <button
+                ref={closeButtonRef}
+                type="button"
+                className="navbar__mobileClose"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="navbar__mobileLinks">
+              {navLinks.map((link) =>
+                link.external ? (
+                  <a key={link.label} href={link.href} className="navbar__mobileLink" target="_blank" rel="noreferrer">
+                    {link.label}
+                  </a>
+                ) : (
+                  <a key={link.label} href={link.href} className="navbar__mobileLink" onClick={() => setMobileMenuOpen(false)}>
+                    {link.label}
+                  </a>
+                )
+              )}
+              <a href="/admin" className="btn btn--primary navbar__mobileCta" onClick={() => setMobileMenuOpen(false)}>
+                Open Dashboard
+              </a>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
