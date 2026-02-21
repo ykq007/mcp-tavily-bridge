@@ -23,18 +23,35 @@ export function CopyButton({
   const { t } = useTranslation('common');
   const toast = useToast();
   const [copied, setCopied] = React.useState(false);
+  const resetTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const defaultLabel = t('copy.copied');
 
+  React.useEffect(
+    () => () => {
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
+      }
+    },
+    []
+  );
+
   const copy = async (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     if (disabled) return;
     try {
       await navigator.clipboard.writeText(text);
+      if (resetTimerRef.current) {
+        clearTimeout(resetTimerRef.current);
+      }
       setCopied(true);
       toast.push({ title: label || defaultLabel, variant: 'success' });
       onCopied?.();
-      setTimeout(() => setCopied(false), 2000);
+      resetTimerRef.current = setTimeout(() => {
+        setCopied(false);
+        resetTimerRef.current = null;
+      }, 2000);
     } catch {
       toast.push({ title: t('copy.failed'), message: t('copy.permissionDenied'), variant: 'error' });
     }
@@ -45,6 +62,7 @@ export function CopyButton({
       className={`btn ${variant === 'ghost' ? 'btn--icon' : ''} ${className || ''}`}
       data-variant={variant}
       onClick={copy}
+      type="button"
       disabled={disabled}
       aria-label={label || defaultLabel}
       title={label || defaultLabel}

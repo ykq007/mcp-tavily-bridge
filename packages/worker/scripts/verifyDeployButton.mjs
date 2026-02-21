@@ -100,6 +100,11 @@ try {
     throw new Error(`npm install failed with exit code ${install.code}`);
   }
 
+  const buildAdmin = await run(NPM, ['run', 'build:admin'], { cwd: tempRoot });
+  if (buildAdmin.code !== 0) {
+    throw new Error(`npm run build:admin failed with exit code ${buildAdmin.code}`);
+  }
+
   const dryRun = await run(
     NPX,
     ['wrangler', 'deploy', '--dry-run', '--outdir', 'dist-test'],

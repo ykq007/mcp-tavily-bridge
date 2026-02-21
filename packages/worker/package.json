@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "build": "echo 'No build step required - Wrangler handles TypeScript'",
-    "build:admin": "cd ../admin-ui && npm run build && node ../worker/scripts/syncAdminUiPublic.mjs",
+    "build:admin": "node scripts/buildAdminUi.mjs",
     "deploy": "npm run build:admin && wrangler d1 migrations apply DB --remote && wrangler deploy",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
