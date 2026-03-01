@@ -13,9 +13,11 @@ packages/bridge-worker/
 *.log
 .DS_Store
 *.tsbuildinfo
+*.tgz
 
 # Local AI/agent tooling
 .omx/
+.omc/
 .codex/
 .gemini/
 .claude/

@@ -1,23 +1,53 @@
 {
   "name": "@mcp-nexus/stdio-http-bridge",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
+  "description": "Thin stdio-to-HTTP bridge for mcp-nexus. Connects stdio-only MCP clients to a remote bridge-server over Streamable HTTP.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ykq007/mcp-nexus.git",
+    "directory": "packages/stdio-http-bridge"
+  },
+  "keywords": [
+    "mcp",
+    "tavily",
+    "brave-search",
+    "stdio",
+    "bridge",
+    "model-context-protocol"
+  ],
   "type": "module",
-  "bin": "./dist/index.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18.3.0"
+  },
+  "bin": {
+    "stdio-http-bridge": "dist/index.js"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc -p tsconfig.json",
+    "prepack": "node -e \"const fs=require('node:fs');fs.rmSync('dist',{recursive:true,force:true});fs.rmSync('tsconfig.tsbuildinfo',{force:true})\" && npm run build && node -e \"const fs=require('node:fs');if(!fs.existsSync('dist/index.js')){throw new Error('dist/index.js missing after build');}try{fs.chmodSync('dist/index.js',0o755);}catch{}\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm test",
     "test": "vitest run"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.3",
-    "tsx": "^4.19.2"
+    "@modelcontextprotocol/sdk": "^1.25.3"
   },
   "devDependencies": {
     "express": "^4.21.2",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^2.1.8"
   }

@@ -274,12 +274,12 @@ describe('Worker Contract Compliance', () => {
         jsonrpc: '2.0',
         error: {
           code: -32600,
-          message: 'Authorization header required'
+          message: 'Client token required'
         }
       };
 
       expect(error.error.code).toBe(-32600);
-      expect(error.error.message).toBe('Authorization header required');
+      expect(error.error.message).toBe('Client token required');
     });
 
     it('should return consistent rate limit errors', () => {

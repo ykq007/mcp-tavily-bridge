@@ -6,12 +6,13 @@ import type { Env } from './env.js';
 import { adminRouter } from './routes/admin/index.js';
 import { handleMcpRequest } from './mcp/mcpHandler.js';
 import { clientAuth } from './middleware/clientAuth.js';
+import { redactSensitiveQueryParams } from './utils/redact.js';
 
 // Create the main Hono app
 const app = new Hono<{ Bindings: Env }>();
 
 // Global middleware
-app.use('*', logger());
+app.use('*', logger((line) => console.log(redactSensitiveQueryParams(line))));
 
 function originHostname(origin: string): string | null {
   try {
@@ -83,20 +84,27 @@ app.get('/mcp', (c) => {
 
 // MCP SSE endpoint - forwards to Durable Object for session management with authentication
 app.get('/mcp/sse', clientAuth, async (c) => {
-  const authHeader = c.req.header('Authorization');
-  const sessionId = authHeader
-    ? authHeader.replace('Bearer ', '').substring(0, 16)
-    : 'anonymous';
+  const clientTokenId = c.get('clientTokenId');
+  const clientTokenPrefix = c.get('clientTokenPrefix');
+  const sessionId = clientTokenId
+    ? `client:${clientTokenId}`
+    : clientTokenPrefix
+      ? `prefix:${clientTokenPrefix}`
+      : 'anonymous';
 
   const id = c.env.MCP_SESSION.idFromName(sessionId);
   const stub = c.env.MCP_SESSION.get(id);
 
   const url = new URL(c.req.url);
   url.pathname = '/sse';
+  url.search = '';
+
+  const headers = new Headers(c.req.raw.headers);
+  headers.delete('Authorization');
 
   return stub.fetch(new Request(url.toString(), {
     method: 'GET',
-    headers: c.req.raw.headers,
+    headers,
   }));
 });
 

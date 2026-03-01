@@ -3,20 +3,69 @@ import type { Next } from 'hono';
 import { D1Client } from '../db/d1.js';
 import type { WorkerContext } from '../context.js';
 
+export type ExtractClientTokenOptions = {
+  authorizationHeader: string | undefined;
+  queryTavilyApiKey: string | undefined;
+  queryToken: string | undefined;
+  enableQueryAuth: boolean;
+};
+
+export function extractClientTokenFromRequest({
+  authorizationHeader,
+  queryTavilyApiKey,
+  queryToken,
+  enableQueryAuth
+}: ExtractClientTokenOptions): string | undefined {
+  const header = authorizationHeader?.trim() ?? '';
+  if (header) {
+    const bearerMatch = header.match(/^Bearer\s+(.+)$/i);
+    if (bearerMatch) {
+      const token = bearerMatch[1]?.trim();
+      if (token) return token;
+      return undefined;
+    }
+
+    // Backwards compatibility: allow raw token in Authorization header
+    // (as long as it doesn't look like a structured auth header).
+    const lower = header.toLowerCase();
+    if (lower === 'bearer' || lower === 'basic' || lower === 'digest') {
+      // Ignore auth schemes without credentials.
+    } else if (!/\s/.test(header)) {
+      return header;
+    }
+  }
+
+  if (!enableQueryAuth) return undefined;
+
+  const alias = queryToken?.trim();
+  if (alias) return alias;
+
+  const tavilyApiKey = queryTavilyApiKey?.trim();
+  if (tavilyApiKey) return tavilyApiKey;
+
+  return undefined;
+}
+
 /**
  * Middleware to validate MCP client token
  */
 export async function clientAuth(c: WorkerContext, next: Next): Promise<Response | void> {
   const authHeader = c.req.header('Authorization');
+  const enableQueryAuth = c.env.ENABLE_QUERY_AUTH === 'true';
 
-  if (!authHeader) {
+  const token = extractClientTokenFromRequest({
+    authorizationHeader: authHeader,
+    queryTavilyApiKey: c.req.query('tavilyApiKey'),
+    queryToken: c.req.query('token'),
+    enableQueryAuth
+  });
+
+  if (!token) {
     return c.json({
       jsonrpc: '2.0',
-      error: { code: -32600, message: 'Authorization header required' },
+      error: { code: -32600, message: 'Client token required' },
     }, 401);
   }
-
-  const token = authHeader.replace('Bearer ', '');
 
   // Extract prefix (first 8 chars) for lookup
   const prefix = token.substring(0, 8);

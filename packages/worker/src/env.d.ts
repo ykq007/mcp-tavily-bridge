@@ -23,6 +23,7 @@ export interface Env {
   // Environment variables
   MCP_RATE_LIMIT_PER_MINUTE: string;
   MCP_GLOBAL_RATE_LIMIT_PER_MINUTE: string;
+  ENABLE_QUERY_AUTH?: string;
   TAVILY_KEY_SELECTION_STRATEGY: string;
   SEARCH_SOURCE_MODE?: string;
   TAVILY_RESEARCH_ENABLED?: string;

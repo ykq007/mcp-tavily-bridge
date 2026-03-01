@@ -86,7 +86,7 @@ Configuration is managed via environment variables. Copy `.env.example` to `.env
 | `ADMIN_API_TOKEN`     | Bearer token for accessing the Admin API.                                                                 | (generated in example)             |
 | `HOST`                | The host address for the server to listen on.                                                             | `0.0.0.0`                          |
 | `PORT`                | The port for the server to listen on.                                                                     | `8787`                             |
-| `ENABLE_QUERY_AUTH`   | If `true`, enables MCP client token authentication for the `/mcp` endpoint.                                 | `false`                            |
+| `ENABLE_QUERY_AUTH`   | If `true`, also allow passing the MCP client token via query string (`?tavilyApiKey=...` / `?token=...`) instead of `Authorization: Bearer ...`. (Not recommended for production.) | `false`                            |
 
 ### Rate Limiting
 
@@ -186,3 +186,35 @@ One-click deployment to Cloudflare's free tier with D1 database. See [packages/w
 ### Docker Compose (Self-Hosted)
 
 The included `docker-compose.yml` and `Dockerfile` provide a production-ready setup for self-hosting.
+
+## Maintainers: Publishing `@mcp-nexus/stdio-http-bridge`
+
+This repo is an npm workspaces monorepo. Only `@mcp-nexus/stdio-http-bridge` is intended to be published to npm.
+
+### Prereqs
+
+- You must have npm publish permissions for the `@mcp-nexus` scope (or change the package name/scope).
+- Login and verify:
+
+```bash
+npm login
+npm whoami
+```
+
+### Release (recommended: tag-triggered CI)
+
+1. Bump the workspace version and create a tag:
+
+```bash
+npm version patch -w @mcp-nexus/stdio-http-bridge --tag-version-prefix stdio-http-bridge-v
+git push --follow-tags
+```
+
+2. Configure GitHub Actions secret `NPM_TOKEN` (an npm access token with publish rights).
+3. The workflow `.github/workflows/publish-stdio-http-bridge.yml` will publish on tags matching `stdio-http-bridge-v*`.
+
+### Release (manual)
+
+```bash
+npm publish -w @mcp-nexus/stdio-http-bridge
+```

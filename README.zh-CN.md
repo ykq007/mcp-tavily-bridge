@@ -86,7 +86,7 @@ npm run dev:bridge-server
 | `ADMIN_API_TOKEN`     | 用于访问管理 API 的 Bearer Token。                                                               | (在示例中生成)                     |
 | `HOST`                | 服务器监听的主机地址。                                                                           | `0.0.0.0`                          |
 | `PORT`                | 服务器监听的端口。                                                                               | `8787`                             |
-| `ENABLE_QUERY_AUTH`   | 如果为 `true`，则为 `/mcp` 端点启用 MCP 客户端令牌认证。                                         | `false`                            |
+| `ENABLE_QUERY_AUTH`   | 如果为 `true`，也允许通过查询字符串（`?tavilyApiKey=...` / `?token=...`）传递 MCP 客户端令牌，而不是 `Authorization: Bearer ...`。（不建议在生产环境使用。） | `false`                            |
 
 ### 速率限制
 

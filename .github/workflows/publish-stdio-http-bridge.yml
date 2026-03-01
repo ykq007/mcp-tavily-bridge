@@ -1,0 +1,48 @@
+name: Publish stdio-http-bridge (npm)
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "stdio-http-bridge-v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Test
+        run: npm --workspace @mcp-nexus/stdio-http-bridge test
+
+      - name: Verify tag matches package version
+        if: startsWith(github.ref, 'refs/tags/stdio-http-bridge-v')
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#stdio-http-bridge-v}"
+          PKG_VERSION="$(node -p \"require('./packages/stdio-http-bridge/package.json').version\")"
+          if [ \"$TAG_VERSION\" != \"$PKG_VERSION\" ]; then
+            echo \"Tag version ($TAG_VERSION) does not match package version ($PKG_VERSION)\"
+            exit 1
+          fi
+
+      - name: Pack (sanity check)
+        run: npm pack -w @mcp-nexus/stdio-http-bridge
+
+      - name: Publish
+        run: npm publish -w @mcp-nexus/stdio-http-bridge --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

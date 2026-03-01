@@ -10,6 +10,12 @@ This is intended for MCP clients that only support **stdio** (subprocess) server
 npx -y @mcp-nexus/stdio-http-bridge --base-url https://your-bridge-host --token <client_token>
 ```
 
+Global install:
+```sh
+npm i -g @mcp-nexus/stdio-http-bridge
+stdio-http-bridge --base-url https://your-bridge-host --token <client_token>
+```
+
 Environment-only (recommended; avoids putting the token on the command line):
 ```sh
 export TAVILY_BRIDGE_BASE_URL="https://your-bridge-host"
