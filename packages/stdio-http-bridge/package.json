@@ -1,6 +1,6 @@
 {
   "name": "@mcp-nexus/stdio-http-bridge",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "description": "Thin stdio-to-HTTP bridge for mcp-nexus. Connects stdio-only MCP clients to a remote bridge-server over Streamable HTTP.",
   "license": "MIT",
