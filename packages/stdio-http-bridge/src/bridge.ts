@@ -5,7 +5,7 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import type { Readable, Writable } from 'node:stream';
 
-export type StartBridgeOptions = {
+type StartBridgeOptions = {
   mcpUrl: string;
   token: string;
   defaultParametersJson?: string | undefined;

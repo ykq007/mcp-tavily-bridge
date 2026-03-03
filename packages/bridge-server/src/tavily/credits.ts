@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { PrismaClient } from '@mcp-nexus/db';
 import { TavilyHttpError } from '@mcp-nexus/core';
 
-export type TavilyCreditsSnapshot = {
+type TavilyCreditsSnapshot = {
   keyUsage: number | null;
   keyLimit: number | null;
   keyRemaining: number | null;

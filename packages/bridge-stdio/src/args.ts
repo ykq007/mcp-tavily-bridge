@@ -1,12 +1,12 @@
 import { parseArgs } from 'node:util';
 import type { SearchSourceMode } from '@mcp-nexus/core';
 
-export type StdioCliArgs = {
+type StdioCliArgs = {
   token: string;
   searchSourceMode: SearchSourceMode;
 };
 
-export type ParseStdioCliArgsResult =
+type ParseStdioCliArgsResult =
   | { ok: true; value: StdioCliArgs }
   | { ok: false; error: string; exitCode: 1 | 2 };
 

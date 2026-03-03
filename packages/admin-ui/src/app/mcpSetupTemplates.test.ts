@@ -36,7 +36,7 @@ describe('mcpSetupTemplates', () => {
     const target = MCP_SETUP_TARGETS.find((t) => t.id === 'claude-desktop-npx')!;
     const snippet = target.render({ apiBaseUrl: 'http://localhost:8787/', origin: '', clientToken: 'mcp_x.y' });
     expect(snippet).toContain('"command": "npx"');
-    expect(snippet).toContain('@mcp-nexus/stdio-http-bridge');
+    expect(snippet).toContain('@nexus-mcp/stdio-http-bridge');
     expect(snippet).toContain('http://localhost:8787');
     expect(snippet).toContain('mcp_x.y');
     expect(snippet).toContain('TAVILY_BRIDGE_BASE_URL');

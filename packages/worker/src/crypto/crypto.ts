@@ -115,39 +115,6 @@ async function importKey(keyEncoded: string): Promise<CryptoKey> {
   );
 }
 
-/**
- * Generate a SHA-256 hash
- */
-export async function sha256(data: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const bytes = encoder.encode(data);
-  const hash = await crypto.subtle.digest('SHA-256', bytes);
-  return Array.from(new Uint8Array(hash))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-/**
- * Generate HMAC-SHA256
- */
-export async function hmacSha256(data: string, secret: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const keyData = encoder.encode(secret);
-  const dataBytes = encoder.encode(data);
-
-  const key = await crypto.subtle.importKey(
-    'raw',
-    keyData,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-
-  const signature = await crypto.subtle.sign('HMAC', key, dataBytes);
-  return Array.from(new Uint8Array(signature))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-}
 
 /**
  * Generate a random token

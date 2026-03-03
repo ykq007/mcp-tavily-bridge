@@ -2,15 +2,15 @@ import { createHash, createHmac } from 'node:crypto';
 import type { PrismaClient } from '@mcp-nexus/db';
 import { requestContext } from '../context.js';
 
-export type BraveUsageLogMode = 'none' | 'hash' | 'preview' | 'full';
+type BraveUsageLogMode = 'none' | 'hash' | 'preview' | 'full';
 
-export function getBraveUsageLogMode(): BraveUsageLogMode {
+function getBraveUsageLogMode(): BraveUsageLogMode {
   const raw = (process.env.BRAVE_USAGE_LOG_MODE ?? 'preview').toLowerCase();
   if (raw === 'none' || raw === 'hash' || raw === 'preview' || raw === 'full') return raw;
   return 'preview';
 }
 
-export function getBraveUsageRetentionDays(): number | null {
+function getBraveUsageRetentionDays(): number | null {
   const raw = (process.env.BRAVE_USAGE_RETENTION_DAYS ?? '').trim();
   if (!raw) return null;
   const n = Number(raw);
@@ -18,7 +18,7 @@ export function getBraveUsageRetentionDays(): number | null {
   return Math.floor(n);
 }
 
-export function sha256Hex(input: string): string {
+function sha256Hex(input: string): string {
   return createHash('sha256').update(input, 'utf8').digest('hex');
 }
 
@@ -61,7 +61,7 @@ function redactCommonSecrets(text: string): string {
   return s;
 }
 
-export function buildQueryMetadata(query: string | undefined, mode: BraveUsageLogMode): { queryHash?: string; queryPreview?: string } {
+function buildQueryMetadata(query: string | undefined, mode: BraveUsageLogMode): { queryHash?: string; queryPreview?: string } {
   if (!query) return {};
   if (mode === 'none') return {};
 
@@ -73,7 +73,7 @@ export function buildQueryMetadata(query: string | undefined, mode: BraveUsageLo
   return { queryHash, queryPreview: clampPreview(redacted, 180) };
 }
 
-export function shouldLogBraveUsage(mode: BraveUsageLogMode): boolean {
+function shouldLogBraveUsage(mode: BraveUsageLogMode): boolean {
   if (mode === 'none') return false;
   const raw = (process.env.BRAVE_USAGE_SAMPLE_RATE ?? '').trim();
   if (!raw) return true;
@@ -83,7 +83,7 @@ export function shouldLogBraveUsage(mode: BraveUsageLogMode): boolean {
   return Math.random() < n;
 }
 
-export async function maybeCleanupOldBraveUsageRows(prisma: PrismaClient): Promise<void> {
+async function maybeCleanupOldBraveUsageRows(prisma: PrismaClient): Promise<void> {
   const days = getBraveUsageRetentionDays();
   if (!days) return;
 

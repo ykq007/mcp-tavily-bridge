@@ -1,10 +1,10 @@
-export type McpSetupContext = {
+type McpSetupContext = {
   apiBaseUrl: string;
   origin: string;
   clientToken: string;
 };
 
-export type McpSetupTarget = {
+type McpSetupTarget = {
   id: string;
   title: string;
   kind: 'http' | 'stdio';
@@ -33,9 +33,9 @@ function baseUrlOrPlaceholder(baseUrl: string): string {
 export const MCP_SETUP_TARGETS: McpSetupTarget[] = [
   {
     id: 'http-curl',
-    title: 'HTTP (cURL test)',
+    title: 'HTTP (cURL sanity check)',
     kind: 'http',
-    description: 'Quick sanity check that your client token can authenticate to the MCP endpoint.',
+    description: 'Quick sanity check for direct MCP-over-HTTP access using your client token.',
     render: (ctx) => {
       const url = resolveMcpUrl(ctx);
       const token = tokenOrPlaceholder(ctx.clientToken);
@@ -52,9 +52,9 @@ export const MCP_SETUP_TARGETS: McpSetupTarget[] = [
   },
   {
     id: 'http-generic',
-    title: 'HTTP (any MCP HTTP client)',
+    title: 'HTTP (any MCP-over-HTTP client)',
     kind: 'http',
-    description: 'Use these values in any client that supports MCP over HTTP and custom headers.',
+    description: 'Use these values in any client that speaks MCP over HTTP and lets you set custom headers.',
     render: (ctx) => {
       const url = resolveMcpUrl(ctx);
       const token = tokenOrPlaceholder(ctx.clientToken);
@@ -69,25 +69,27 @@ export const MCP_SETUP_TARGETS: McpSetupTarget[] = [
   },
   {
     id: 'stdio-generic',
-    title: 'stdio (generic)',
+    title: 'stdio (npx wrapper → HTTP)',
     kind: 'stdio',
-    description: 'Recommended: run a lightweight stdio wrapper via npx that connects to the bridge-server over HTTP.',
+    description: 'Recommended for stdio clients: install + run the published wrapper via npx (latest). The wrapper talks stdio locally and connects to the bridge over HTTP.',
     render: (ctx) => {
       const token = tokenOrPlaceholder(ctx.clientToken);
       const baseUrl = baseUrlOrPlaceholder(resolveMcpBaseUrl(ctx));
       return [
+        '# 1) Set env vars for the stdio wrapper',
         `export TAVILY_BRIDGE_MCP_TOKEN="${token}"`,
         `export TAVILY_BRIDGE_BASE_URL="${baseUrl}"`,
         '',
-        'npx -y @mcp-nexus/stdio-http-bridge'
+        '# 2) Install + run (latest)',
+        'npx -y @nexus-mcp/stdio-http-bridge'
       ].join('\n');
     }
   },
   {
     id: 'claude-desktop-npx',
-    title: 'Claude Desktop (npx → HTTP)',
+    title: 'Claude Desktop (npx wrapper → HTTP)',
     kind: 'stdio',
-    description: 'Recommended: no repo checkout; token is passed via env (not command-line args).',
+    description: 'Recommended: no repo checkout. Runs @nexus-mcp/stdio-http-bridge via npx and passes auth via env (not command-line args).',
     render: (ctx) => {
       const token = tokenOrPlaceholder(ctx.clientToken);
       const baseUrl = baseUrlOrPlaceholder(resolveMcpBaseUrl(ctx));
@@ -96,7 +98,7 @@ export const MCP_SETUP_TARGETS: McpSetupTarget[] = [
         '  "mcpServers": {',
         '    "tavily-bridge": {',
         '      "command": "npx",',
-        '      "args": ["-y", "@mcp-nexus/stdio-http-bridge"],',
+        '      "args": ["-y", "@nexus-mcp/stdio-http-bridge"],',
         '      "env": {',
         `        "TAVILY_BRIDGE_BASE_URL": "${baseUrl}",`,
         `        "TAVILY_BRIDGE_MCP_TOKEN": "${token}"`,

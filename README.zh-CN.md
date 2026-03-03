@@ -165,7 +165,7 @@ npm run dev:bridge-server
   "mcpServers": {
     "mcp-nexus": {
       "command": "npx",
-      "args": ["-y", "@mcp-nexus/stdio-http-bridge"],
+      "args": ["-y", "@nexus-mcp/stdio-http-bridge"],
       "env": {
         "TAVILY_BRIDGE_BASE_URL": "http://localhost:8787",
         "TAVILY_BRIDGE_MCP_TOKEN": "<client_token>"

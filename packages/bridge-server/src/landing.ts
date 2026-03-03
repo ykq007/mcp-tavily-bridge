@@ -24,18 +24,10 @@ export function renderLandingPage(opts: { githubUrl: string; adminPath: string; 
 
   const connectHttp = `curl -X POST ${healthPath.replace('/health', '/mcp')} \\\n  -H "Authorization: Bearer <client_token>" \\\n  -H "Content-Type: application/json" \\\n  -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{}}'`;
 
-  const connectStdio = `{
-  "mcpServers": {
-    "tavily-bridge": {
-      "command": "npx",
-      "args": ["-y", "@mcp-nexus/stdio-http-bridge"],
-      "env": {
-        "TAVILY_BRIDGE_BASE_URL": "http://localhost:8787",
-        "TAVILY_BRIDGE_MCP_TOKEN": "<client_token>"
-      }
-    }
-  }
-}`;
+  const connectStdio = `export TAVILY_BRIDGE_BASE_URL="http://localhost:8787"
+export TAVILY_BRIDGE_MCP_TOKEN="<client_token>"
+
+npx -y @nexus-mcp/stdio-http-bridge`;
 
   return `<!doctype html>
 <html lang="en">
@@ -495,7 +487,7 @@ export function renderLandingPage(opts: { githubUrl: string; adminPath: string; 
         </div>
         <div style="height: 10px"></div>
         <div class="muted" style="font-size: 13px;">
-          Admin UI: <a href="${escapeHtml(adminPath)}"><span class="kbd">${escapeHtml(adminPath)}</span></a>
+          Requires <span class="kbd">TAVILY_BRIDGE_BASE_URL</span> + <span class="kbd">TAVILY_BRIDGE_MCP_TOKEN</span>. Admin UI: <a href="${escapeHtml(adminPath)}"><span class="kbd">${escapeHtml(adminPath)}</span></a>
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 import { TavilyHttpError } from '@mcp-nexus/core';
 
-export type TavilyHttpClient = {
+type TavilyHttpClient = {
   search: (payload: Record<string, unknown>) => Promise<any>;
   extract: (payload: Record<string, unknown>) => Promise<any>;
   crawl: (payload: Record<string, unknown>) => Promise<any>;

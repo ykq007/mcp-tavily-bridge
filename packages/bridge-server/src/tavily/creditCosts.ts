@@ -14,7 +14,7 @@ export interface OperationParams {
   model?: 'mini' | 'pro' | 'auto';
 }
 
-export interface CreditCost {
+interface CreditCost {
   min: number;
   max: number;
   estimated: number;

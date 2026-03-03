@@ -1,0 +1,34 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/**/*.mjs"],
+      "project": ["scripts/**/*.mjs"]
+    },
+    "packages/admin-ui": {
+      "project": ["src/**/*.{ts,tsx,js,jsx}"]
+    },
+    "packages/landing-page": {
+      "project": ["src/**/*.{ts,tsx,js,jsx}"]
+    },
+    "packages/bridge-server": {
+      "project": ["src/**/*.{ts,tsx,js,jsx}", "test/**/*.{ts,tsx}"]
+    },
+    "packages/bridge-stdio": {
+      "project": ["src/**/*.{ts,tsx,js,jsx}", "test/**/*.{ts,tsx}"]
+    },
+    "packages/core": {
+      "project": ["src/**/*.{ts,tsx,js,jsx}", "test/**/*.{ts,tsx}"]
+    },
+    "packages/db": {
+      "project": ["src/**/*.{ts,tsx,js,jsx}"]
+    },
+    "packages/stdio-http-bridge": {
+      "project": ["src/**/*.{ts,tsx,js,jsx}", "test/**/*.{ts,tsx}"]
+    },
+    "packages/worker": {
+      "project": ["src/**/*.{ts,tsx,js,jsx}", "scripts/**/*.mjs", "test/**/*.{ts,tsx}"],
+      "ignoreDependencies": ["cloudflare"]
+    }
+  }
+}

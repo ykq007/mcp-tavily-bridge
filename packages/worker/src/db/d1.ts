@@ -58,14 +58,14 @@ export interface ClientToken {
   createdAt: string;
 }
 
-export interface ServerSetting {
+interface ServerSetting {
   key: string;
   value: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface TavilyToolUsage {
+interface TavilyToolUsage {
   id: string;
   timestamp: string;
   toolName: string;
@@ -80,7 +80,7 @@ export interface TavilyToolUsage {
   errorMessage: string | null;
 }
 
-export interface BraveToolUsage {
+interface BraveToolUsage {
   id: string;
   timestamp: string;
   toolName: string;
@@ -95,9 +95,9 @@ export interface BraveToolUsage {
   errorMessage: string | null;
 }
 
-export type CombinedUsageLog = TavilyToolUsage | BraveToolUsage;
+type CombinedUsageLog = TavilyToolUsage | BraveToolUsage;
 
-export interface UsageQueryFilters {
+interface UsageQueryFilters {
   toolName?: string;
   outcome?: string;
   clientTokenPrefix?: string;
@@ -106,12 +106,12 @@ export interface UsageQueryFilters {
   dateTo?: string;
 }
 
-export interface CombinedUsageResult {
+interface CombinedUsageResult {
   logs: CombinedUsageLog[];
   totalItems: number;
 }
 
-export interface UsageSummaryResult {
+interface UsageSummaryResult {
   total: number;
   byTool: { toolName: string; count: number }[];
   topQueries: { queryHash: string | null; queryPreview: string | null; count: number }[];

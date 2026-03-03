@@ -11,7 +11,7 @@ export function formatDateTime(value: string | null | undefined): string {
   }).format(date);
 }
 
-export type TimeTranslator = (key: string, options?: { count: number }) => string;
+type TimeTranslator = (key: string, options?: { count: number }) => string;
 
 export function formatRelativeSeconds(
   seconds: number | null | undefined,
@@ -34,10 +34,3 @@ export function formatRelativeSeconds(
   const days = Math.round(seconds / 86400);
   return t ? t('days', { count: days }) : `${days}d`;
 }
-
-export function maskSecret(token: string): string {
-  if (!token) return '';
-  if (token.length <= 10) return '••••••';
-  return `${token.slice(0, 6)}••••••${token.slice(-4)}`;
-}
-

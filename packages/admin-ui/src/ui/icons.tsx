@@ -63,19 +63,6 @@ export function IconToken(props: IconProps) {
   );
 }
 
-export function IconList(props: IconProps) {
-  return (
-    <Svg {...props}>
-      <path d="M8 6h13" />
-      <path d="M8 12h13" />
-      <path d="M8 18h13" />
-      <path d="M3 6h.01" />
-      <path d="M3 12h.01" />
-      <path d="M3 18h.01" />
-    </Svg>
-  );
-}
-
 export function IconSettings(props: IconProps) {
   return (
     <Svg {...props}>
@@ -133,15 +120,6 @@ export function IconX(props: IconProps) {
   );
 }
 
-export function IconArrowRight(props: IconProps) {
-  return (
-    <Svg {...props}>
-      <path d="M5 12h14" />
-      <path d="M12 5l7 7-7 7" />
-    </Svg>
-  );
-}
-
 export function IconSearch(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -177,16 +155,6 @@ export function IconTrash(props: React.SVGProps<SVGSVGElement>) {
       <path d="M3 6h18" />
       <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
       <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-    </svg>
-  );
-}
-
-export function IconDots(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <circle cx="12" cy="12" r="1" />
-      <circle cx="12" cy="5" r="1" />
-      <circle cx="12" cy="19" r="1" />
     </svg>
   );
 }

@@ -1,4 +1,4 @@
-import { createDecipheriv, createCipheriv, createHash, randomBytes } from 'node:crypto';
+import { createDecipheriv } from 'node:crypto';
 
 export function parseAes256GcmKeyFromEnv(envVar: string): Buffer {
   const raw = process.env[envVar];
@@ -20,15 +20,4 @@ export function decryptAes256Gcm(payload: Buffer, key: Buffer): string {
   return plaintext.toString('utf8');
 }
 
-export function sha256Bytes(input: string): Buffer {
-  return createHash('sha256').update(input, 'utf8').digest();
-}
-
-export function encryptAes256Gcm(plaintext: string, key: Buffer): Buffer {
-  const iv = randomBytes(12);
-  const cipher = createCipheriv('aes-256-gcm', key, iv);
-  const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
-  const tag = cipher.getAuthTag();
-  return Buffer.concat([iv, tag, ciphertext]);
-}
 

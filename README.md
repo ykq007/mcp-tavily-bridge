@@ -165,7 +165,7 @@ Set `TAVILY_BRIDGE_BASE_URL` to your deployment URL (for local Docker Compose: `
   "mcpServers": {
     "mcp-nexus": {
       "command": "npx",
-      "args": ["-y", "@mcp-nexus/stdio-http-bridge"],
+      "args": ["-y", "@nexus-mcp/stdio-http-bridge"],
       "env": {
         "TAVILY_BRIDGE_BASE_URL": "http://localhost:8787",
         "TAVILY_BRIDGE_MCP_TOKEN": "<client_token>"
@@ -187,13 +187,13 @@ One-click deployment to Cloudflare's free tier with D1 database. See [packages/w
 
 The included `docker-compose.yml` and `Dockerfile` provide a production-ready setup for self-hosting.
 
-## Maintainers: Publishing `@mcp-nexus/stdio-http-bridge`
+## Maintainers: Publishing `@nexus-mcp/stdio-http-bridge`
 
-This repo is an npm workspaces monorepo. Only `@mcp-nexus/stdio-http-bridge` is intended to be published to npm.
+This repo is an npm workspaces monorepo. Only `@nexus-mcp/stdio-http-bridge` is intended to be published to npm.
 
 ### Prereqs
 
-- You must have npm publish permissions for the `@mcp-nexus` scope (or change the package name/scope).
+- You must have npm publish permissions for the `@nexus-mcp` scope (or change the package name/scope).
 - Login and verify:
 
 ```bash
@@ -206,7 +206,7 @@ npm whoami
 1. Bump the workspace version and create a tag:
 
 ```bash
-npm version patch -w @mcp-nexus/stdio-http-bridge --tag-version-prefix stdio-http-bridge-v
+npm version patch -w @nexus-mcp/stdio-http-bridge --tag-version-prefix stdio-http-bridge-v
 git push --follow-tags
 ```
 
@@ -216,5 +216,5 @@ git push --follow-tags
 ### Release (manual)
 
 ```bash
-npm publish -w @mcp-nexus/stdio-http-bridge
+npm publish -w @nexus-mcp/stdio-http-bridge
 ```

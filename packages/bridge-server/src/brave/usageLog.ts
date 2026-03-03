@@ -2,7 +2,7 @@ import { createHash, createHmac } from 'node:crypto';
 import type { PrismaClient } from '@mcp-nexus/db';
 import { requestContext } from '../context.js';
 
-export type BraveUsageLogMode = 'none' | 'hash' | 'preview' | 'full';
+type BraveUsageLogMode = 'none' | 'hash' | 'preview' | 'full';
 
 export function getBraveUsageLogMode(): BraveUsageLogMode {
   const raw = (process.env.BRAVE_USAGE_LOG_MODE ?? 'preview').toLowerCase();

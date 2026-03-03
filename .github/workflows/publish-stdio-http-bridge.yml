@@ -27,7 +27,7 @@ jobs:
         run: npm ci
 
       - name: Test
-        run: npm --workspace @mcp-nexus/stdio-http-bridge test
+        run: npm --workspace @nexus-mcp/stdio-http-bridge test
 
       - name: Verify tag matches package version
         if: startsWith(github.ref, 'refs/tags/stdio-http-bridge-v')
@@ -40,9 +40,9 @@ jobs:
           fi
 
       - name: Pack (sanity check)
-        run: npm pack -w @mcp-nexus/stdio-http-bridge
+        run: npm pack -w @nexus-mcp/stdio-http-bridge
 
       - name: Publish
-        run: npm publish -w @mcp-nexus/stdio-http-bridge --ignore-scripts
+        run: npm publish -w @nexus-mcp/stdio-http-bridge --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

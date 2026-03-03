@@ -2,7 +2,7 @@ import { createHash, createHmac } from 'node:crypto';
 import type { PrismaClient } from '@mcp-nexus/db';
 import { requestContext } from '../context.js';
 
-export type TavilyUsageLogMode = 'none' | 'hash' | 'preview' | 'full';
+type TavilyUsageLogMode = 'none' | 'hash' | 'preview' | 'full';
 
 export function getTavilyUsageLogMode(): TavilyUsageLogMode {
   const raw = (process.env.TAVILY_USAGE_LOG_MODE ?? 'preview').toLowerCase();

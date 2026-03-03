@@ -193,7 +193,7 @@ export type BatchImportResult = {
   errors: Array<{ provider: 'tavily' | 'brave'; index: number; label: string; error: string }>;
 };
 
-export type AdminApiConfig = {
+type AdminApiConfig = {
   baseUrl: string;
   adminToken: string;
 };

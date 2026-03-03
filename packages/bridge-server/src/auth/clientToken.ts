@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@mcp-nexus/db';
 import { sha256Bytes, timingSafeEqualBytes } from '../crypto/crypto.js';
 
-export type ParsedClientToken =
+type ParsedClientToken =
   | { ok: true; prefix: string; secret: string }
   | { ok: false; error: string };
 

@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { IconAlertCircle, IconCheck, IconInfo, IconX } from './icons';
 
-export type ToastVariant = 'success' | 'error' | 'warning' | 'info';
+type ToastVariant = 'success' | 'error' | 'warning' | 'info';
 
 type Toast = {
   id: string;

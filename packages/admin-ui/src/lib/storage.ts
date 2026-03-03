@@ -15,12 +15,3 @@ export function writeJson(key: string, value: unknown): void {
     // ignore (storage may be disabled)
   }
 }
-
-export function removeKey(key: string): void {
-  try {
-    localStorage.removeItem(key);
-  } catch {
-    // ignore
-  }
-}
-

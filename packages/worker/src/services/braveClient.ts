@@ -4,7 +4,7 @@
 
 const BRAVE_API_BASE = 'https://api.search.brave.com/res/v1';
 
-export interface BraveWebSearchResult {
+interface BraveWebSearchResult {
   type: 'search';
   query: {
     original: string;
@@ -33,7 +33,7 @@ export interface BraveWebSearchResult {
   };
 }
 
-export interface BraveLocalSearchResult {
+interface BraveLocalSearchResult {
   type: 'search';
   query: {
     original: string;

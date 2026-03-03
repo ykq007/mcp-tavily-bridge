@@ -3,7 +3,7 @@ import type { Next } from 'hono';
 import { D1Client } from '../db/d1.js';
 import type { WorkerContext } from '../context.js';
 
-export type ExtractClientTokenOptions = {
+type ExtractClientTokenOptions = {
   authorizationHeader: string | undefined;
   queryTavilyApiKey: string | undefined;
   queryToken: string | undefined;

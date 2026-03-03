@@ -2,7 +2,7 @@ import type { PrismaClient, BraveKey } from '@mcp-nexus/db';
 import { orderKeyCandidates, type TavilyKeySelectionStrategy } from '@mcp-nexus/core';
 import { decryptAes256Gcm } from '../crypto/crypto.js';
 
-export type EligibleKey = BraveKey & { apiKey: string };
+type EligibleKey = BraveKey & { apiKey: string };
 
 class Mutex {
   private current: Promise<void> = Promise.resolve();

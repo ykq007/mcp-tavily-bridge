@@ -6,7 +6,7 @@ import { IconChevronLeft, IconChevronRight, IconKey, IconSearch, IconSettings, I
 import { ROUTE_PATHS } from './routePaths';
 import { buildLandingLoginUrl } from './loginUrl';
 
-export type PageId = 'overview' | 'keys' | 'tokens' | 'usage' | 'settings' | 'playground';
+type PageId = 'overview' | 'keys' | 'tokens' | 'usage' | 'settings' | 'playground';
 
 interface NavItemDef {
   path: string;

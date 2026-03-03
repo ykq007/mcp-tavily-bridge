@@ -1,4 +1,4 @@
-export type SearchSourceMode =
+type SearchSourceMode =
   | 'tavily_only'
   | 'brave_only'
   | 'combined'

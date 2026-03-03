@@ -33,7 +33,7 @@ import { renderLandingPage } from './landing.js';
 import { ServerSettings } from './settings/serverSettings.js';
 import { createLoggingBraveClient } from './brave/loggingClient.js';
 
-export type CreateBridgeAppOptions = {
+type CreateBridgeAppOptions = {
   host?: string;
 };
 
@@ -84,11 +84,12 @@ export function createBridgeApp(options: CreateBridgeAppOptions = {}): express.E
     app.use('/', express.static(landingPagePublic, { index: 'index.html' }));
   }
 
+  // Legacy /admin-ui route is intentionally unsupported.
+  app.use('/admin-ui', (_req, res) => res.status(404).send('Not Found'));
+
   // Serve the built admin UI at /admin if present
   const adminUiDist = path.resolve(__dirname, '../../admin-ui/dist');
   if (fs.existsSync(adminUiDist)) {
-    app.get(['/admin-ui', '/admin-ui/'], (_req, res) => res.redirect(302, '/admin'));
-    app.use('/admin-ui', (_req, res) => res.redirect(302, '/admin'));
     app.use('/admin', express.static(adminUiDist));
   }
 

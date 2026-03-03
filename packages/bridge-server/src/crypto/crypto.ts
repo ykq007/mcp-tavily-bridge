@@ -9,7 +9,7 @@ export function timingSafeEqualBytes(a: Buffer, b: Buffer): boolean {
   return timingSafeEqual(a, b);
 }
 
-export function parseAes256GcmKeyFromEnv(envVar: string): Buffer {
+function parseAes256GcmKeyFromEnv(envVar: string): Buffer {
   const raw = process.env[envVar];
   if (!raw) {
     throw new Error(`${envVar} is required (32-byte key as hex or base64).`);
@@ -22,7 +22,7 @@ export function parseAes256GcmKeyFromEnv(envVar: string): Buffer {
   return key;
 }
 
-export type ParsedAes256GcmEnvKey =
+type ParsedAes256GcmEnvKey =
   | { ok: true; key: Buffer }
   | { ok: false; error: string };
 

@@ -2,7 +2,7 @@ import type { BraveClient } from '@mcp-nexus/core';
 import type { PrismaClient } from '@mcp-nexus/db';
 import { logBraveToolUsage } from './usageLog.js';
 
-export type LoggingBraveClientOptions = {
+type LoggingBraveClientOptions = {
   client: BraveClient;
   prisma: PrismaClient;
   upstreamKeyId?: string;

@@ -1,4 +1,4 @@
-export interface SearchResult {
+interface SearchResult {
   title: string;
   url: string;
   description?: string;

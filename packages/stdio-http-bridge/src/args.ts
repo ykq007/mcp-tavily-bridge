@@ -1,12 +1,12 @@
 import { parseArgs } from 'node:util';
 
-export type BridgeCliArgs = {
+type BridgeCliArgs = {
   mcpUrl: string;
   token: string;
   defaultParametersJson: string | undefined;
 };
 
-export type ParseBridgeCliArgsResult =
+type ParseBridgeCliArgsResult =
   | { ok: true; value: BridgeCliArgs }
   | { ok: false; error: string; exitCode: 1 | 2 };
 
@@ -86,7 +86,7 @@ export function usage(): string {
     'mcp-nexus stdio→http bridge',
     '',
     'Usage:',
-    '  npx -y @mcp-nexus/stdio-http-bridge [--base-url <origin> | --mcp-url <url>] [--token <client_token>]',
+    '  npx -y @nexus-mcp/stdio-http-bridge [--base-url <origin> | --mcp-url <url>] [--token <client_token>]',
     '',
     'Options:',
     '  --base-url <origin>           Base URL for the bridge-server (we append /mcp).',

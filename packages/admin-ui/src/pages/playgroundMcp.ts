@@ -13,7 +13,7 @@ export type JsonRpcMessage = {
   error?: JsonRpcError;
 };
 
-export const MCP_ACCEPT_HEADER = 'application/json, text/event-stream';
+const MCP_ACCEPT_HEADER = 'application/json, text/event-stream';
 
 const SESSION_INVALID_ERROR_PATTERNS = [
   'No valid session ID',

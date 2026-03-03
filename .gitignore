@@ -4,7 +4,6 @@
 node_modules/
 dist/
 coverage/
-public/admin-ui/
 packages/bridge-worker/
 .env
 .env.*

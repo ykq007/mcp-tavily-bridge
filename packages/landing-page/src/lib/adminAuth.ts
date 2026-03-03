@@ -1,4 +1,4 @@
-export type StorageLike = {
+type StorageLike = {
   getItem: (key: string) => string | null;
   setItem: (key: string, value: string) => void;
   removeItem: (key: string) => void;
@@ -88,7 +88,7 @@ export function persistAdminToken(
   safeRemove(local, ADMIN_LOCAL_TOKEN_KEY);
 }
 
-export function hasRememberedAdminToken(opts: { local?: StorageLike | null } = {}): boolean {
+function hasRememberedAdminToken(opts: { local?: StorageLike | null } = {}): boolean {
   const local = opts.local ?? defaultLocalStorage();
   const token = safeGet(local, ADMIN_LOCAL_TOKEN_KEY);
   return typeof token === 'string' && token.trim().length > 0;

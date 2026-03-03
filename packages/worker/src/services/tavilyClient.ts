@@ -4,7 +4,7 @@
 
 const TAVILY_API_BASE = 'https://api.tavily.com';
 
-export interface TavilySearchResult {
+interface TavilySearchResult {
   results: Array<{
     title: string;
     url: string;
@@ -17,25 +17,25 @@ export interface TavilySearchResult {
   images?: string[];
 }
 
-export interface TavilyExtractResult {
+interface TavilyExtractResult {
   results: Array<{
     url: string;
     raw_content: string;
   }>;
 }
 
-export interface TavilyCrawlResult {
+interface TavilyCrawlResult {
   results: Array<{
     url: string;
     raw_content: string;
   }>;
 }
 
-export interface TavilyMapResult {
+interface TavilyMapResult {
   urls: string[];
 }
 
-export interface TavilyResearchResult {
+interface TavilyResearchResult {
   content?: string;
   sources?: Array<{
     title: string;
